@@ -72,6 +72,7 @@
           class="btn btn-primary"
           data-bs-toggle="modal"
           data-bs-target="#add-batter"
+          :disabled="!battingNow"
         >
           <span
             data-bs-toggle="tooltip"
@@ -172,6 +173,7 @@
           class="btn btn-primary"
           data-bs-toggle="modal"
           data-bs-target="#select-bowler"
+          :disabled="!bowlingNow"
         >
           <span
             data-bs-toggle="tooltip"
@@ -262,7 +264,7 @@
       <div aria-details="Hit run" class="col-auto">
         <button
           type="button"
-          class="btn btn-primary"
+          class="btn btn-warning"
           data-bs-toggle="modal"
           data-bs-target="#add-score"
           :disabled="
@@ -270,11 +272,14 @@
             !selectedBowler ||
             batters.filter((b) => !b.isOut && b.team == battingNow).length !=
               2 ||
-            bowlers
+            (bowlers
               .filter((s) => s.team != bowlingNow)
               .reduce((sum, item) => sum + item.balls, 0) %
               6 ==
-              0
+              0 &&
+              bowlers
+                .filter((s) => s.team != bowlingNow)
+                .reduce((sum, item) => sum + item.balls, 0) > 0)
           "
         >
           <span
@@ -524,7 +529,11 @@ export default {
   },
   computed: {
     bowlingNow() {
-      return this.battingNow == this.teams.t1 ? this.teams.t2 : this.teams.t1;
+      if (this.battingNow) {
+        return this.battingNow == this.teams.t1 ? this.teams.t2 : this.teams.t1;
+      } else {
+        return "";
+      }
     },
   },
   methods: {

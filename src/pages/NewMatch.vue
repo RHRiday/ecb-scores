@@ -86,7 +86,7 @@
     </div>
     <div class="mb-2" aria-details="Team details" v-if="step >= 3">
       <h3>Enter player names:</h3>
-      <div class="row">
+      <div class="row gy-2">
         <div class="col-md-6">
           <div class="col-12 border border-dark rounded p-3">
             <p>
@@ -97,7 +97,7 @@
               :key="index"
               type="text"
               class="form-control mb-1"
-              placeholder="Player name"
+              :placeholder="'Player name #' + (parseInt(index) + 1)"
               v-model="player.t1p"
             />
           </div>
@@ -112,12 +112,12 @@
               :key="index"
               type="text"
               class="form-control mb-1"
-              placeholder="Player name"
+              :placeholder="'Player name #' + (parseInt(index) + 1)"
               v-model="player.t2p"
             />
           </div>
         </div>
-        <div class="col-md-3 col-lg-2 d-grid my-3">
+        <div class="col-md-3 col-lg-2 d-grid my-2">
           <button
             type="button"
             class="btn btn-outline-success"
@@ -230,7 +230,7 @@ export default {
           );
         })
       ) {
-        toastr.error("Please set different player names in a single team.");
+        toastr.error("Please set different player names in each team.");
         return false;
       } else {
         return true;

@@ -28,6 +28,7 @@
             </h5>
             <button
               type="button"
+              id="close-offcanvas"
               class="btn-close"
               data-bs-dismiss="offcanvas"
               aria-label="Close"
@@ -36,10 +37,22 @@
           <div class="offcanvas-body">
             <ul class="navbar-nav justify-content-end flex-grow-1 pe-3">
               <li class="nav-item">
-                <router-link to="/" class="nav-link">Home</router-link>
+                <router-link
+                  to="/"
+                  class="nav-link alert"
+                  :class="{ 'alert-info': $route.name == 'Home' }"
+                  @click="closeOffcanvas"
+                  >Home</router-link
+                >
               </li>
               <li class="nav-item">
-                <router-link to="/new-match" class="nav-link">New match</router-link>
+                <router-link
+                  to="/new-match"
+                  class="nav-link alert"
+                  :class="{ 'alert-info': $route.name == 'NewMatch' }"
+                  @click="closeOffcanvas"
+                  >New match</router-link
+                >
               </li>
             </ul>
           </div>
@@ -51,5 +64,11 @@
 </template>
 
 <script>
-export default {};
+export default {
+  methods: {
+    closeOffcanvas() {
+      document.getElementById("close-offcanvas").click();
+    },
+  },
+};
 </script>
