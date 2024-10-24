@@ -133,6 +133,7 @@
 
 <script>
 import toastr from "toastr";
+import _ from "lodash";
 export default {
   data() {
     return {
@@ -193,7 +194,14 @@ export default {
         toastr.error("Please entry players' names.");
       } else {
         if (this.finalCheck()) {
+          this.teamNames.t1 = _.upperFirst(_.camelCase(this.teamNames.t1));
+          this.teamNames.t2 = _.upperFirst(_.camelCase(this.teamNames.t2));
           sessionStorage.setItem("teams", JSON.stringify(this.teamNames));
+
+          this.playersrs = this.players.map((player) => {
+            player.t1p = _.upperFirst(_.camelCase(player.t1p));
+            player.t2p = _.upperFirst(_.camelCase(player.t2p));
+          });
           sessionStorage.setItem("players", JSON.stringify(this.players));
           this.$router.push({
             name: "ScoreBoard",

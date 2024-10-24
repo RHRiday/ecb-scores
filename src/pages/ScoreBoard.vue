@@ -105,9 +105,12 @@
                 ></button>
               </div>
               <div class="modal-body">
-                <div class="row gy-2" v-if="battingNow == teams.t1">
+                <div
+                  class="row gy-2 justify-content-center"
+                  v-if="battingNow == teams.t1"
+                >
                   <div
-                    class="col-6 col-md-3 col-lg-2 d-grid"
+                    class="col-auto d-grid"
                     v-for="(player, index) in players"
                     :key="index"
                   >
@@ -129,9 +132,12 @@
                     </button>
                   </div>
                 </div>
-                <div class="row gy-2" v-if="battingNow == teams.t2">
+                <div
+                  class="row gy-2 justify-content-center"
+                  v-if="battingNow == teams.t2"
+                >
                   <div
-                    class="col-6 col-md-3 col-lg-2 d-grid"
+                    class="col-auto d-grid"
                     v-for="(player, index) in players"
                     :key="index"
                   >
@@ -207,9 +213,12 @@
                 ></button>
               </div>
               <div class="modal-body">
-                <div class="row gy-2" v-if="battingNow == teams.t1">
+                <div
+                  class="row gy-2 justify-content-center"
+                  v-if="battingNow == teams.t1"
+                >
                   <div
-                    class="col-6 col-md-3 col-lg-2 d-grid"
+                    class="col-auto d-grid"
                     v-for="(player, index) in players"
                     :key="index"
                   >
@@ -227,9 +236,12 @@
                     </button>
                   </div>
                 </div>
-                <div class="row gy-2" v-if="battingNow == teams.t2">
+                <div
+                  class="row gy-2 justify-content-center"
+                  v-if="battingNow == teams.t2"
+                >
                   <div
-                    class="col-6 col-md-3 col-lg-2 d-grid"
+                    class="col-auto d-grid"
                     v-for="(player, index) in players"
                     :key="index"
                   >
@@ -385,6 +397,19 @@
           </span>
         </button>
       </div>
+      <div aria-details="Export scorecard" class="col-auto">
+        <button type="button" class="btn btn-info" @click="exportToJson">
+          <span
+            data-bs-toggle="tooltip"
+            data-bs-placement="top"
+            title="Download score-data"
+          >
+            <fa-icon icon="upload" />
+            &nbsp;
+            <fa-icon icon="clipboard-list" />
+          </span>
+        </button>
+      </div>
     </div>
     <div class="mb-2" aria-details="Scorecard">
       <h3 class="my-2">Scorecard:</h3>
@@ -502,6 +527,7 @@
 import toastr from "toastr";
 import availableHits from "./../router/availableHits";
 import { Tooltip } from "bootstrap";
+import { saveAs } from "file-saver";
 export default {
   mounted() {
     new Tooltip(document.body, {
@@ -749,6 +775,16 @@ export default {
         .filter((s) => s.team != team)
         .reduce((sum, item) => sum + item.balls, 0);
       return (this.totalRun(team) / balls) * 6;
+    },
+    exportToJson() {
+      let scorecard = {
+        batters: this.batters,
+        bowlers: this.bowlers,
+      };
+      const blob = new Blob([JSON.stringify(scorecard, null, 2)], {
+        type: "application/json",
+      });
+      saveAs(blob, "scorecard-" + Math.floor(Math.random() * 100) + ".json");
     },
   },
   created() {

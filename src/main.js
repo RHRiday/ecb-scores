@@ -19,6 +19,7 @@ import {
   faPlus,
   faRotateLeft,
   faToggleOn,
+  faUpload,
   faWalking,
 } from "@fortawesome/free-solid-svg-icons";
 
@@ -35,6 +36,7 @@ library.add(
   faPlus,
   faRotateLeft,
   faToggleOn,
+  faUpload,
   faWalking
 );
 createApp(App).use(router).component("fa-icon", FontAwesomeIcon).mount("#app");

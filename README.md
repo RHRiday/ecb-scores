@@ -1,5 +1,23 @@
-# Vue 3 + Vite
+# ECB (Elakar Cricket Board)
+A solution to keep track of scorecards of gully cricket!
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+Checkout demo application [here](https://rhriday.github.io/ecb-scores).
 
-Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
+## Tutorial
+1. Open a new match
+2. Enter team names and player names
+3. Select which team is batting
+4. Select batters.
+    - Left most button in the functions.
+    - You can concurrenctly select 2 batters.
+5. Select bowler.
+    - 2nd to the left most button in the functions.
+    - You must change bowler when it is an over.
+6. Add scores. (Yellow button)
+    - . is for a dot
+    - b is for bye-run
+    - wd is for wide
+    - nb is for no-ball
+    - w is for wicket
+7. You can switch batter for any manual control
+8. Download the scorecard as a json format
