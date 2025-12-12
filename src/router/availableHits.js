@@ -111,5 +111,13 @@ const availableHits = [
     isRunByBowler: false,
     isBall: true,
   },
+  {
+    show: "ro",
+    run: 0,
+    isOut: true,
+    isRunByBatsman: false,
+    isRunByBowler: false,
+    isBall: false,
+  },
 ];
 export default availableHits;

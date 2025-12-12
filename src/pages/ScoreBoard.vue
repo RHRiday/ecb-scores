@@ -11,11 +11,11 @@
             type="button"
             class="btn"
             :class="{
-              'btn-info': selectBatFirst == teams.t1 && battingNow == '',
+              'btn-info': selectedBattingNow == teams.t1 && battingNow == '',
               'btn-success': battingNow == teams.t1,
-              'btn-outline-secondary': selectBatFirst != teams.t1,
+              'btn-outline-secondary': selectedBattingNow != teams.t1,
             }"
-            @click="selectBatFirst = teams.t1"
+            @click="selectedBattingNow = teams.t1"
             :disabled="battingNow != ''"
           >
             {{ teams.t1 }}
@@ -30,11 +30,11 @@
             type="button"
             class="btn"
             :class="{
-              'btn-info': selectBatFirst == teams.t2 && battingNow == '',
+              'btn-info': selectedBattingNow == teams.t2 && battingNow == '',
               'btn-success': battingNow == teams.t2,
-              'btn-outline-secondary': selectBatFirst != teams.t2,
+              'btn-outline-secondary': selectedBattingNow != teams.t2,
             }"
-            @click="selectBatFirst = teams.t2"
+            @click="selectedBattingNow = teams.t2"
             :disabled="battingNow != ''"
           >
             {{ teams.t2 }}
@@ -45,7 +45,7 @@
           <button
             type="button"
             class="btn btn-success"
-            @click="setBatFirst"
+            @click="setBattingTeam"
             v-if="!battingNow"
           >
             <fa-icon icon="check" />
@@ -54,9 +54,17 @@
             type="button"
             class="btn btn-secondary"
             @click="battingNow = ''"
-            v-if="battingNow"
+            v-if="battingNow && !matchOngoing"
           >
             <fa-icon icon="pen-to-square" />
+          </button>
+          <button
+            type="button"
+            class="btn btn-info"
+            @click="switchBattingNow"
+            v-if="battingNow && matchOngoing"
+          >
+            <fa-icon icon="toggle-on" />
           </button>
         </div>
       </div>
@@ -279,20 +287,7 @@
           class="btn btn-warning"
           data-bs-toggle="modal"
           data-bs-target="#add-score"
-          :disabled="
-            !selectedBatter ||
-            !selectedBowler ||
-            batters.filter((b) => !b.isOut && b.team == battingNow).length !=
-              2 ||
-            (bowlers
-              .filter((s) => s.team != bowlingNow)
-              .reduce((sum, item) => sum + item.balls, 0) %
-              6 ==
-              0 &&
-              bowlers
-                .filter((s) => s.team != bowlingNow)
-                .reduce((sum, item) => sum + item.balls, 0) > 0)
-          "
+          :disabled="!canSetScore()"
         >
           <span
             data-bs-toggle="tooltip"
@@ -537,7 +532,7 @@ export default {
   data() {
     return {
       step: 1,
-      selectBatFirst: "",
+      selectedBattingNow: "",
       battingNow: "",
       batters: [],
       bowlers: [],
@@ -551,6 +546,7 @@ export default {
       availableScore: availableHits,
       selectedScore: [],
       scores: [],
+      matchOngoing: false,
     };
   },
   computed: {
@@ -563,13 +559,21 @@ export default {
     },
   },
   methods: {
-    setBatFirst() {
-      if (!this.selectBatFirst) {
-        toastr.error("Please select who is batting first.");
+    switchBattingNow() {
+      let permitted = window.confirm("Are you sure?");
+      if (permitted) {
+        this.selectedBattingNow =
+          this.battingNow == this.teams.t1 ? this.teams.t2 : this.teams.t1;
+        this.setBattingTeam();
+      }
+    },
+    setBattingTeam() {
+      if (!this.selectedBattingNow) {
+        toastr.error("Please select who is batting now.");
       } else {
         this.selectedBatter = "";
         this.selectedBowler = "";
-        this.battingNow = this.selectBatFirst;
+        this.battingNow = this.selectedBattingNow;
       }
     },
     selectBatter(player) {
@@ -597,6 +601,7 @@ export default {
           isOut: false,
           team: this.battingNow,
         });
+        this.matchOngoing = true;
       }
     },
     setBowlers() {
@@ -619,6 +624,25 @@ export default {
     undoScore() {
       this.selectedScore.pop();
     },
+    canSetScore() {
+      if (
+        !this.selectedBatter ||
+        !this.selectedBowler ||
+        this.batters.filter((b) => !b.isOut && b.team == this.battingNow)
+          .length != 2 
+        // ||
+        // !(this.bowlers
+        //   .filter((s) => s.team != this.bowlingNow)
+        //   .reduce((sum, item) => sum + item.balls, 0) %
+        //   6 ==
+        //   0 &&
+        //   this.bowlers
+        //     .filter((s) => s.team != this.bowlingNow)
+        //     .reduce((sum, item) => sum + item.balls, 0) > 0)
+      ) {
+        return false;
+      } else return true;
+    },
     setScore() {
       this.checkForDots();
       const hits = this.selectedScore.map((s) => {
@@ -637,6 +661,15 @@ export default {
       this.addRunToBowler();
       this.checkSwitchBatsman();
       this.selectedScore = [];
+      let scorecard = {
+        bowlers: this.bowlers,
+        batters: this.batters,
+        battingNow: this.battingNow,
+        selectedBowler: this.selectedBowler,
+        selectedBatter: this.selectedBatter,
+        scores: this.scores,
+      };
+      sessionStorage.setItem("scorecard", JSON.stringify(scorecard));
       document.getElementById("close-add-score").click();
     },
     addRunToBatter() {
@@ -708,7 +741,7 @@ export default {
         }
         if (r.isOut) {
           this.bowlers = this.bowlers.map((bowler) => {
-            if (bowler.name == r.bowlBy) {
+            if (bowler.name == r.bowlBy && r.show != "ro") {
               return { ...bowler, wickets: bowler.wickets + 1 };
             } else {
               return { ...bowler };
@@ -790,6 +823,19 @@ export default {
   created() {
     this.teams = JSON.parse(sessionStorage.getItem("teams"));
     this.players = JSON.parse(sessionStorage.getItem("players"));
+
+    let savedScorecard = JSON.parse(sessionStorage.getItem("scorecard"));
+
+    if (savedScorecard != "" && savedScorecard != null) {
+      this.batters = savedScorecard.batters;
+      this.bowlers = savedScorecard.bowlers;
+      this.selectedBatter = savedScorecard.selectedBatter;
+      this.selectedBowler = savedScorecard.selectedBowler;
+      this.selectedBattingNow = savedScorecard.selectedBattingNow;
+      this.battingNow = savedScorecard.battingNow;
+      this.scores = savedScorecard.scores ?? [];
+      this.matchOngoing = true;
+    }
   },
 };
 </script>

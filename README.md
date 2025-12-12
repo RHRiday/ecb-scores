@@ -19,5 +19,6 @@ Checkout demo application [here](https://rhriday.github.io/ecb-scores).
     - wd is for wide
     - nb is for no-ball
     - w is for wicket
+    - ro is for run out (you must switch batsman accordingly and add cover-up score of that particular delivery.)
 7. You can switch batter for any manual control
 8. Download the scorecard as a json format

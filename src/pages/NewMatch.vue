@@ -135,6 +135,9 @@
 import toastr from "toastr";
 import _ from "lodash";
 export default {
+  mounted() {
+    sessionStorage.clear();
+  },
   data() {
     return {
       step: 1,
