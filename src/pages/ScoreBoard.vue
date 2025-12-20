@@ -1,68 +1,56 @@
 <template>
   <div class="container mt-3">
     <div class="mb-2" aria-details="Toss">
-      <h3>Who is batting now?</h3>
+      <h3>Batting team<span v-if="!battingTeam">?</span></h3>
       <div class="row gy-2">
-        <div
-          class="col-md-3 col-lg-2 d-grid"
-          v-if="battingNow == '' || battingNow == teams.t1"
-        >
-          <button
-            type="button"
-            class="btn"
-            :class="{
-              'btn-info': selectedBattingNow == teams.t1 && battingNow == '',
-              'btn-success': battingNow == teams.t1,
-              'btn-outline-secondary': selectedBattingNow != teams.t1,
-            }"
-            @click="selectedBattingNow = teams.t1"
-            :disabled="battingNow != ''"
+        <template v-for="(team, index) in playingTeams" :key="index">
+          <div
+            class="col-md-3 col-lg-2 d-grid"
+            v-if="battingTeam == '' || battingTeam.name == team.name"
           >
-            {{ teams.t1 }}
-            <fa-icon v-if="battingNow == teams.t1" icon="earth-africa" />
-          </button>
-        </div>
-        <div
-          class="col-md-3 col-lg-2 d-grid"
-          v-if="battingNow == '' || battingNow == teams.t2"
-        >
-          <button
-            type="button"
-            class="btn"
-            :class="{
-              'btn-info': selectedBattingNow == teams.t2 && battingNow == '',
-              'btn-success': battingNow == teams.t2,
-              'btn-outline-secondary': selectedBattingNow != teams.t2,
-            }"
-            @click="selectedBattingNow = teams.t2"
-            :disabled="battingNow != ''"
-          >
-            {{ teams.t2 }}
-            <fa-icon v-if="battingNow == teams.t2" icon="earth-africa" />
-          </button>
-        </div>
+            <button
+              type="button"
+              class="btn"
+              :class="{
+                'btn-info':
+                  selectedBattingNow == team.name && battingTeam == '',
+                'btn-success': battingTeam.name == team.name,
+                'btn-outline-secondary': selectedBattingNow != team.name,
+              }"
+              @click="selectedBattingNow = team.name"
+              :disabled="battingTeam != ''"
+            >
+              {{ team.name }}
+              <fa-icon
+                v-if="battingTeam.name == team.name"
+                icon="earth-africa"
+              />
+            </button>
+          </div>
+        </template>
         <div class="col-md-3 col-lg-2 d-grid">
           <button
             type="button"
             class="btn btn-success"
             @click="setBattingTeam"
-            v-if="!battingNow"
+            v-if="!battingTeam"
+            :disabled="selectedBattingNow == ''"
           >
             <fa-icon icon="check" />
           </button>
           <button
             type="button"
             class="btn btn-secondary"
-            @click="battingNow = ''"
-            v-if="battingNow && !matchOngoing"
+            @click="battingTeam = ''"
+            v-if="battingTeam && !matchOngoing"
           >
             <fa-icon icon="pen-to-square" />
           </button>
           <button
             type="button"
             class="btn btn-info"
-            @click="switchBattingNow"
-            v-if="battingNow && matchOngoing"
+            @click="switchInnings"
+            v-if="battingTeam && matchOngoing"
           >
             <fa-icon icon="toggle-on" />
           </button>
@@ -72,303 +60,115 @@
     <div
       class="row mb-2 gy-2 justify-content-around"
       aria-details="Match functions"
+      v-if="battingTeam"
     >
       <h3 class="col-12">Functions:</h3>
-      <div aria-details="Add batter" class="col-auto">
-        <button
-          type="button"
-          class="btn btn-primary"
-          data-bs-toggle="modal"
-          data-bs-target="#add-batter"
-          :disabled="!battingNow"
-        >
-          <span
-            data-bs-toggle="tooltip"
-            data-bs-placement="top"
-            title="Add batter"
+      <ScoreModal
+        :header="'Choose batters'"
+        :secondButtonClass="'primary'"
+        :modalCondition="battingTeam"
+        :tooltipIcons="['walking', 'plus']"
+      >
+        <template #selectOption>
+          <div
+            class="col-auto d-grid"
+            v-for="(player, index) in battingTeam.players"
+            :key="index"
           >
-            <fa-icon icon="walking" />
-            &nbsp;
-            <fa-icon icon="plus" />
-          </span>
-        </button>
-        <div
-          class="modal fade"
-          id="add-batter"
-          data-bs-backdrop="static"
-          data-bs-keyboard="false"
-          tabindex="-1"
-          aria-labelledby="staticBackdropLabel"
-          aria-hidden="true"
-        >
-          <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title">Choose batsman</h5>
-                <button
-                  type="button"
-                  class="btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
-                ></button>
-              </div>
-              <div class="modal-body">
-                <div
-                  class="row gy-2 justify-content-center"
-                  v-if="battingNow == teams.t1"
-                >
-                  <div
-                    class="col-auto d-grid"
-                    v-for="(player, index) in players"
-                    :key="index"
-                  >
-                    <button
-                      type="button"
-                      class="btn"
-                      :class="[
-                        batters.some((batter) => batter.name == player.t1p) ||
-                        selectedBatter == player.t1p
-                          ? 'btn-info'
-                          : 'btn-outline-secondary',
-                      ]"
-                      :disabled="
-                        batters.some((batter) => batter.name == player.t1p)
-                      "
-                      @click="selectBatter(player.t1p)"
-                    >
-                      {{ player.t1p }}
-                    </button>
-                  </div>
-                </div>
-                <div
-                  class="row gy-2 justify-content-center"
-                  v-if="battingNow == teams.t2"
-                >
-                  <div
-                    class="col-auto d-grid"
-                    v-for="(player, index) in players"
-                    :key="index"
-                  >
-                    <button
-                      type="button"
-                      class="btn"
-                      :class="[
-                        batters.some((batter) => batter.name == player.t2p) ||
-                        selectedBatter == player.t2p
-                          ? 'btn-info'
-                          : 'btn-outline-secondary',
-                      ]"
-                      :disabled="
-                        batters.some((batter) => batter.name == player.t2p)
-                      "
-                      @click="selectBatter(player.t2p)"
-                    >
-                      {{ player.t2p }}
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div class="modal-footer">
-                <button
-                  type="button"
-                  class="btn btn-primary"
-                  @click="setBatters"
-                >
-                  <fa-icon icon="circle-plus" /> Add
-                </button>
-              </div>
-            </div>
+            <button
+              type="button"
+              class="btn"
+              :class="[
+                batters.some((batter) => batter.name == player) ||
+                selectedBatter == player
+                  ? 'btn-info'
+                  : 'btn-outline-secondary',
+              ]"
+              :disabled="batters.some((batter) => batter.name == player)"
+              @click="selectBatter(player)"
+            >
+              {{ player }}
+            </button>
           </div>
-        </div>
-      </div>
-      <div aria-details="Select bowler" class="col-auto">
-        <button
-          type="button"
-          class="btn btn-primary"
-          data-bs-toggle="modal"
-          data-bs-target="#select-bowler"
-          :disabled="!bowlingNow"
-        >
-          <span
-            data-bs-toggle="tooltip"
-            data-bs-placement="top"
-            title="Select bowler"
+        </template>
+        <template #setOptions>
+          <button type="button" class="btn btn-primary" @click="setBatters">
+            <fa-icon icon="circle-plus" /> Add
+          </button>
+        </template>
+      </ScoreModal>
+      <ScoreModal
+        :header="'Choose bowler'"
+        :secondButtonClass="'primary'"
+        :modalCondition="bowlingTeam"
+        :tooltipIcons="['person-running', 'baseball-ball']"
+      >
+        <template #selectOption>
+          <div
+            class="col-auto d-grid"
+            v-for="(player, index) in bowlingTeam.players"
+            :key="index"
           >
-            <fa-icon icon="person-running" />
-            &nbsp;
-            <fa-icon icon="baseball-ball" />
-          </span>
-        </button>
-        <div
-          class="modal fade"
-          id="select-bowler"
-          data-bs-backdrop="static"
-          data-bs-keyboard="false"
-          tabindex="-1"
-          aria-labelledby="staticBackdropLabel"
-          aria-hidden="true"
-        >
-          <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title">Choose bowler</h5>
-                <button
-                  type="button"
-                  id="close-set-bowler"
-                  class="btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
-                ></button>
-              </div>
-              <div class="modal-body">
-                <div
-                  class="row gy-2 justify-content-center"
-                  v-if="battingNow == teams.t1"
-                >
-                  <div
-                    class="col-auto d-grid"
-                    v-for="(player, index) in players"
-                    :key="index"
-                  >
-                    <button
-                      type="button"
-                      class="btn"
-                      :class="[
-                        selectedBowler == player.t2p
-                          ? 'btn-info'
-                          : 'btn-outline-secondary',
-                      ]"
-                      @click="selectBowler(player.t2p)"
-                    >
-                      {{ player.t2p }}
-                    </button>
-                  </div>
-                </div>
-                <div
-                  class="row gy-2 justify-content-center"
-                  v-if="battingNow == teams.t2"
-                >
-                  <div
-                    class="col-auto d-grid"
-                    v-for="(player, index) in players"
-                    :key="index"
-                  >
-                    <button
-                      type="button"
-                      class="btn"
-                      :class="[
-                        selectedBowler == player.t1p
-                          ? 'btn-info'
-                          : 'btn-outline-secondary',
-                      ]"
-                      @click="selectBowler(player.t1p)"
-                    >
-                      {{ player.t1p }}
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div class="modal-footer">
-                <button
-                  type="button"
-                  class="btn btn-primary"
-                  @click="setBowlers"
-                >
-                  <fa-icon icon="check" /> Select
-                </button>
-              </div>
-            </div>
+            <button
+              type="button"
+              class="btn"
+              :class="[
+                selectedBowler == player ? 'btn-info' : 'btn-outline-secondary',
+              ]"
+              @click="selectBowler(player)"
+            >
+              {{ player }}
+            </button>
           </div>
-        </div>
-      </div>
-      <div aria-details="Hit run" class="col-auto">
-        <button
-          type="button"
-          class="btn btn-warning"
-          data-bs-toggle="modal"
-          data-bs-target="#add-score"
-          :disabled="!canSetScore()"
+        </template>
+        <template #setOptions
+          ><button type="button" class="btn btn-primary" @click="setBowlers">
+            <fa-icon icon="check" /> Select
+          </button></template
         >
-          <span
-            data-bs-toggle="tooltip"
-            data-bs-placement="top"
-            title="Add score"
+      </ScoreModal>
+      <ScoreModal
+        :header="'Set score'"
+        :secondButtonClass="'warning'"
+        :modalCondition="canSetScore"
+        :tooltipIcons="['pen', 'clipboard-list']"
+      >
+        <template #selectOption
+          ><div
+            class="col-auto d-grid"
+            v-for="(item, index) in availableScores"
+            :key="index"
           >
-            <fa-icon icon="pen" />
-            &nbsp;
-            <fa-icon icon="clipboard-list" />
-          </span>
-        </button>
-        <div
-          class="modal fade"
-          id="add-score"
-          data-bs-backdrop="static"
-          data-bs-keyboard="false"
-          tabindex="-1"
-          aria-labelledby="staticBackdropLabel"
-          aria-hidden="true"
-        >
-          <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title">Choose a score from the following</h5>
-                <button
-                  type="button"
-                  id="close-add-score"
-                  class="btn-close"
-                  data-bs-dismiss="modal"
-                  aria-label="Close"
-                ></button>
-              </div>
-              <div class="modal-body">
-                <div class="row g-2">
-                  <div
-                    class="col-auto d-grid"
-                    v-for="(item, index) in availableScore"
-                    :key="index"
-                  >
-                    <button
-                      type="button"
-                      class="btn btn-dark"
-                      @click="addScore(item)"
-                      :disabled="this.selectedScore.includes(item)"
-                    >
-                      {{ item.show }}
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-danger" @click="undoScore">
-                  <fa-icon icon="rotate-left" /> Undo
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-primary"
-                  @click="setScore"
-                  :disabled="
-                    batters.filter((b) => !b.isOut && b.team == battingNow)
-                      .length != 2
-                  "
-                >
-                  <fa-icon icon="plus" /> Add
-                </button>
-              </div>
-            </div>
+            <button
+              type="button"
+              class="btn btn-dark"
+              @click="addScore(item)"
+              :disabled="checkSelectableScores(item)"
+            >
+              {{ item.show }}
+            </button>
           </div>
-        </div>
-      </div>
+        </template>
+        <template #setOptions>
+          <button type="button" class="btn btn-danger" @click="undoScore">
+            <fa-icon icon="rotate-left" /> Undo
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            @click="setScore"
+            :disabled="batsmanInPitch.length != 2"
+          >
+            <fa-icon icon="plus" /> Add
+          </button>
+        </template>
+      </ScoreModal>
       <div aria-details="Undo previous" class="col-auto">
         <button type="button" class="btn btn-danger" @click="undoPrevScore">
-          <span
-            data-bs-toggle="tooltip"
-            data-bs-placement="top"
-            title="Undo last score entry"
-          >
-            <fa-icon icon="rotate-left" />
-            &nbsp;
-            <fa-icon icon="clipboard-list" />
-          </span>
+          <button-tooltip
+            :header="'Undo last score'"
+            :icons="['rotate-left', 'clipboard-list']"
+          />
         </button>
       </div>
       <div aria-details="Switch batter" class="col-auto">
@@ -376,42 +176,33 @@
           type="button"
           class="btn btn-primary"
           @click="switchBatter"
-          :disabled="
-            batters.length < 1 ||
-            batters.filter((b) => !b.isOut && b.team == battingNow).length != 2
-          "
+          :disabled="batters.length < 1 || batsmanInPitch < 2"
         >
-          <span
-            data-bs-toggle="tooltip"
-            data-bs-placement="top"
-            title="Switch batsman"
-          >
-            <fa-icon icon="toggle-on" />
-            &nbsp;
-            <fa-icon icon="walking" />
-          </span>
+          <button-tooltip
+            :header="'Switch batsman'"
+            :icons="['toggle-on', 'walking']"
+          />
         </button>
       </div>
       <div aria-details="Export scorecard" class="col-auto">
         <button type="button" class="btn btn-info" @click="exportToJson">
-          <span
-            data-bs-toggle="tooltip"
-            data-bs-placement="top"
-            title="Download score-data"
-          >
-            <fa-icon icon="upload" />
-            &nbsp;
-            <fa-icon icon="clipboard-list" />
-          </span>
+          <button-tooltip
+            :header="'Download scoresheet'"
+            :icons="['upload', 'clipboard-list']"
+          />
         </button>
       </div>
     </div>
-    <div class="mb-2" aria-details="Scorecard">
+    <div
+      class="mb-2"
+      aria-details="Scorecard"
+      v-if="matchOngoing && showScorecard"
+    >
       <h3 class="my-2">Scorecard:</h3>
       <ul class="nav nav-tabs" role="tablist">
         <li
           class="nav-item col-6 col-md-auto"
-          v-for="(team, teamN) in teams"
+          v-for="(team, teamN) in playingTeams"
           :key="teamN"
         >
           <button
@@ -419,18 +210,18 @@
             role="tab"
             class="nav-link w-100"
             data-bs-toggle="tab"
-            :data-bs-target="'#' + team + '_scorecard'"
+            :data-bs-target="'#' + $_.kebabCase(team.name) + '_scorecard'"
           >
-            {{ team }}
+            {{ team.name }}
           </button>
         </li>
       </ul>
       <div class="tab-content">
         <div
-          v-for="(team, teamN) in teams"
+          v-for="(team, teamN) in playingTeams"
           :key="teamN"
           class="tab-pane fade py-3"
-          :id="team + '_scorecard'"
+          :id="$_.kebabCase(team.name) + '_scorecard'"
         >
           <div class="row fw-bold">
             <div class="col-1">#</div>
@@ -440,15 +231,22 @@
             <div class="col-3">S/R</div>
           </div>
           <div
-            class="row"
-            v-for="(batter, index) in batters.filter((b) => b.team == team)"
+            class="row my-1 rounded"
+            v-for="(batter, index) in batters.filter(
+              (b) => b.team == team.name
+            )"
+            :class="{
+              'bg-info bg-gradient': batsmanInPitch.some(
+                (batsman) => batsman.name == batter.name
+              ),
+            }"
             :key="index"
           >
             <div class="col-1">
               {{ index + 1 }}
             </div>
             <div class="col-4">
-              {{ batter.name + (selectedBatter == batter.name ? " *" : "") }}
+              {{ batter.name + markOnCurrentBatsman(batter.name) }}
             </div>
             <div class="col-2">
               {{ batter.run }}
@@ -465,25 +263,35 @@
           >
             <div class="col-5">
               Extras:
-              {{
-                scores
-                  .filter((s) => s.team == team && !s.isRunByBatsman)
-                  .reduce((sum, item) => sum + item.run, 0)
-              }}
+              {{ extraRun(team.name) }}
             </div>
             <div class="col-2">Runs</div>
             <div class="col-2">Overs</div>
             <div class="col-3">Run Rate</div>
             <div class="col-5">Total</div>
             <div class="col-2">
-              {{ totalRun(team) }}
+              {{ totalRun(team.name) }}
             </div>
             <div class="col-2">
-              {{ totalOvers(team) }}
+              {{ totalOvers(team.name) }}
             </div>
             <div class="col-3">
-              {{ runRate(team).toFixed(2) }}
+              {{ runRate(team.name).toFixed(2) }}
             </div>
+            <h6
+              v-if="scoreUpdates.length > 0"
+              class="col-12 d-flex align-items-center my-2"
+              style="gap: 0.5rem"
+            >
+              <span class="flex-shrink-0">Ball by ball:</span>
+              <span class="overflow-auto d-flex" style="gap: 0.5rem">
+                <span
+                  v-for="lastBall in reversedScoreUpdates"
+                  class="badge bg-dark flex-shrink-0"
+                  >{{ lastBall }}
+                </span>
+              </span>
+            </h6>
           </div>
           <div class="row fw-bold">
             <div class="col-1">#</div>
@@ -495,7 +303,12 @@
           </div>
           <div
             class="row"
-            v-for="(bowler, index) in bowlers.filter((b) => b.team != team)"
+            v-for="(bowler, index) in bowlers.filter(
+              (b) => b.team != team.name
+            )"
+            :class="{
+              'bg-warning bg-gradient': bowler.name == selectedBowler,
+            }"
             :key="index"
           >
             <div class="col-1">
@@ -520,10 +333,14 @@
 
 <script>
 import toastr from "toastr";
-import availableHits from "./../router/availableHits";
+import availableHits from "../router/availableHits.js";
 import { Tooltip } from "bootstrap";
 import { saveAs } from "file-saver";
+import ScoreModal from "../components/ScoreModal.vue";
+import ButtonTooltip from "../components/ButtonTooltip.vue";
+import _ from "lodash";
 export default {
+  components: { ScoreModal, ButtonTooltip },
   mounted() {
     new Tooltip(document.body, {
       selector: "[data-bs-toggle='tooltip']",
@@ -531,66 +348,73 @@ export default {
   },
   data() {
     return {
-      step: 1,
+      $_: _,
+      playingTeams: [],
       selectedBattingNow: "",
-      battingNow: "",
+      battingTeam: "",
       batters: [],
       bowlers: [],
-      teams: {
-        t1: "",
-        t2: "",
-      },
       players: [],
       selectedBatter: "",
       selectedBowler: "",
-      availableScore: availableHits,
-      selectedScore: [],
+      availableScores: availableHits,
+      selectedScores: [],
       scores: [],
+      scoreUpdates: [],
       matchOngoing: false,
+      showScorecard: false,
     };
   },
   computed: {
-    bowlingNow() {
-      if (this.battingNow) {
-        return this.battingNow == this.teams.t1 ? this.teams.t2 : this.teams.t1;
+    bowlingTeam() {
+      if (this.battingTeam) {
+        return this.playingTeams.find(
+          (team) => team.name != this.battingTeam.name
+        );
       } else {
         return "";
       }
     },
+    batsmanInPitch() {
+      return this.batters.filter((batter) => {
+        return !batter.isOut && batter.team == this.battingTeam.name;
+      });
+    },
+    bowlersUsed() {
+      return this.bowlers.filter((bowler) => {
+        return bowler.team == this.bowlingTeam.name;
+      });
+    },
+    canSetScore() {
+      return this.batsmanInPitch.length >= 2 && this.bowlersUsed.length > 0;
+    },
+    reversedScoreUpdates() {
+      return this.scoreUpdates.slice().reverse();
+    },
   },
   methods: {
-    switchBattingNow() {
+    switchInnings() {
       let permitted = window.confirm("Are you sure?");
       if (permitted) {
-        this.selectedBattingNow =
-          this.battingNow == this.teams.t1 ? this.teams.t2 : this.teams.t1;
+        this.selectedBattingNow = this.playingTeams.find(
+          (team) => team.name != this.selectedBattingNow
+        ).name;
         this.setBattingTeam();
       }
     },
     setBattingTeam() {
-      if (!this.selectedBattingNow) {
-        toastr.error("Please select who is batting now.");
-      } else {
-        this.selectedBatter = "";
-        this.selectedBowler = "";
-        this.battingNow = this.selectedBattingNow;
-      }
+      this.selectedBatter = "";
+      this.selectedBowler = "";
+      this.battingTeam = this.playingTeams.find(
+        (team) => team.name == this.selectedBattingNow
+      );
     },
     selectBatter(player) {
-      let batsmanInCrease = 0;
-      this.batters.forEach((batter) => {
-        if (!batter.isOut && batter.team == this.battingNow) {
-          batsmanInCrease = batsmanInCrease + 1;
-        }
-      });
-      if (batsmanInCrease < 2) {
+      if (this.batsmanInPitch.length < 2) {
         this.selectedBatter = player;
       } else {
-        toastr.error("Two batsman already in crease.");
+        toastr.error("Two batsman already in pitch.");
       }
-    },
-    selectBowler(player) {
-      this.selectedBowler = player;
     },
     setBatters() {
       if (!this.batters.some((batter) => batter.name == this.selectedBatter)) {
@@ -599,10 +423,21 @@ export default {
           run: 0,
           balls: 0,
           isOut: false,
-          team: this.battingNow,
+          outBy: "",
+          team: this.battingTeam.name,
         });
         this.matchOngoing = true;
+        sessionStorage.setItem("matchOngoing", true);
       }
+      if (this.batsmanInPitch.length >= 2) {
+        document.getElementById("close-choose-batters").click();
+      }
+      if (this.canSetScore) {
+        this.showScorecard = true;
+      }
+    },
+    selectBowler(player) {
+      this.selectedBowler = player;
     },
     setBowlers() {
       if (!this.bowlers.some((bowler) => bowler.name == this.selectedBowler)) {
@@ -611,74 +446,56 @@ export default {
           balls: 0,
           run: 0,
           wickets: 0,
-          team: this.bowlingNow,
+          team: this.bowlingTeam.name,
         });
       }
-      document.getElementById("close-set-bowler").click();
+      document.getElementById("close-choose-bowler").click();
+      if (this.canSetScore) {
+        this.showScorecard = true;
+      }
     },
     addScore(item) {
-      if (!this.selectedScore.includes(item)) {
-        this.selectedScore.push(item);
+      if (!this.selectedScores.includes(item)) {
+        this.selectedScores.push(item);
       }
     },
     undoScore() {
-      this.selectedScore.pop();
-    },
-    canSetScore() {
-      if (
-        !this.selectedBatter ||
-        !this.selectedBowler ||
-        this.batters.filter((b) => !b.isOut && b.team == this.battingNow)
-          .length != 2 
-        // ||
-        // !(this.bowlers
-        //   .filter((s) => s.team != this.bowlingNow)
-        //   .reduce((sum, item) => sum + item.balls, 0) %
-        //   6 ==
-        //   0 &&
-        //   this.bowlers
-        //     .filter((s) => s.team != this.bowlingNow)
-        //     .reduce((sum, item) => sum + item.balls, 0) > 0)
-      ) {
-        return false;
-      } else return true;
+      this.selectedScores = [];
     },
     setScore() {
-      this.checkForDots();
-      const hits = this.selectedScore.map((s) => {
+      this.adjustDeliveryCount();
+      this.addToLastDelivery();
+      this.addDeliveryToScore();
+      this.updateBatterRun();
+      this.updateBowlerRun();
+      this.checkSwitchBatsman();
+      this.updateStorage();
+      this.selectedScores = [];
+
+      document.getElementById("close-set-score").click();
+    },
+    addDeliveryToScore() {
+      const hits = this.selectedScores.map((score) => {
         return {
-          ...s,
+          ...score,
           runBy: this.selectedBatter,
           bowlBy: this.selectedBowler,
-          team: this.battingNow,
+          team: this.battingTeam.name,
         };
       });
 
       hits.forEach((hit) => {
         this.scores.push(hit);
       });
-      this.addRunToBatter();
-      this.addRunToBowler();
-      this.checkSwitchBatsman();
-      this.selectedScore = [];
-      let scorecard = {
-        bowlers: this.bowlers,
-        batters: this.batters,
-        battingNow: this.battingNow,
-        selectedBowler: this.selectedBowler,
-        selectedBatter: this.selectedBatter,
-        scores: this.scores,
-      };
-      sessionStorage.setItem("scorecard", JSON.stringify(scorecard));
-      document.getElementById("close-add-score").click();
     },
-    addRunToBatter() {
+    updateBatterRun() {
       this.batters = this.batters.map((batsman) => {
         return {
           ...batsman,
           run: 0,
           balls: 0,
           isOut: false,
+          outBy: "",
         };
       });
       this.scores.forEach((r) => {
@@ -703,7 +520,11 @@ export default {
         if (r.isOut) {
           this.batters = this.batters.map((batsman) => {
             if (batsman.name == r.runBy) {
-              return { ...batsman, isOut: true };
+              return {
+                ...batsman,
+                outBy: this.selectedBowler,
+                isOut: true,
+              };
             } else {
               return { ...batsman };
             }
@@ -711,7 +532,7 @@ export default {
         }
       });
     },
-    addRunToBowler() {
+    updateBowlerRun() {
       this.bowlers = this.bowlers.map((bowler) => {
         return {
           ...bowler,
@@ -750,64 +571,96 @@ export default {
         }
       });
     },
-    checkForDots() {
+    adjustDeliveryCount() {
       if (
-        this.selectedScore.some((score) => ["wd", "nb"].includes(score.show))
+        this.selectedScores.some((score) => ["wd", "nb"].includes(score.show))
       ) {
-        this.selectedScore = this.selectedScore.map((s) => {
+        this.selectedScores = this.selectedScores.map((s) => {
           return { ...s, isBall: false };
         });
       }
     },
+    addToLastDelivery() {
+      const show = this.selectedScores.map((s) => s.show).join(" ");
+      this.scoreUpdates.push(show);
+    },
+    markOnCurrentBatsman(batsman) {
+      return this.selectedBatter == batsman ? " *" : "";
+    },
+    checkSelectableScores(item) {
+      return (
+        this.selectedScores.includes(item) ||
+        this.selectedScores.some((score) => score.show == ".") ||
+        this.selectedScores.some((score) => {
+          return (
+            score.show == "wd" &&
+            [".", "1", "2", "3", "4", "5", "6", "nb"].includes(item.show)
+          );
+        }) ||
+        this.selectedScores.some((score) => {
+          return score.show == "nb" && item.show != "ro";
+        })
+      );
+    },
     checkSwitchBatsman() {
       if (
-        this.selectedScore.some((score) =>
-          ["1", "3", "5", "1b", "5b"].some((s) => s == score.show)
-        ) ||
-        this.bowlers.some(
-          (bowler) => bowler.name == this.selectBowler && bowler.balls % 6 == 0
+        this.selectedScores.some((score) =>
+          ["1", "3", "5", "1b", "3b", "5b"].some((s) => s == score.show)
         )
       ) {
         this.switchBatter();
       }
     },
     switchBatter() {
-      let nonStrike = this.batters
-        .filter((s) => s.team == this.battingNow)
-        .find((batter) => {
-          return batter.name != this.selectedBatter && !batter.isOut;
-        });
+      let nonStrike = this.batsmanInPitch.find((batter) => {
+        return batter.name != this.selectedBatter && !batter.isOut;
+      });
       this.selectedBatter = nonStrike.name;
     },
     undoPrevScore() {
-      this.scores.pop();
-      this.addRunToBatter();
-      this.addRunToBowler();
+      const popped = this.scores.pop();
+      this.updateBatterRun();
+      this.updateBowlerRun();
+      if (popped.isBall) {
+        this.scoreUpdates.pop();
+      }
     },
-    totalRun(team) {
+    totalRun(battingTeam) {
       return this.scores
-        .filter((s) => s.team == team)
+        .filter((s) => s.team == battingTeam)
         .reduce((sum, item) => sum + item.run, 0);
     },
-    totalOvers(team) {
+    extraRun(battingTeam) {
+      return this.scores
+        .filter((s) => s.team == battingTeam && !s.isRunByBatsman)
+        .reduce((sum, item) => sum + item.run, 0);
+    },
+    totalBalls(battingTeam) {
+      return this.bowlers
+        .filter((s) => s.team != battingTeam)
+        .reduce((sum, item) => sum + item.balls, 0);
+    },
+    totalOvers(battingTeam) {
       return (
-        Math.floor(
-          this.bowlers
-            .filter((s) => s.team != team)
-            .reduce((sum, item) => sum + item.balls, 0) / 6
-        ) +
+        Math.floor(this.totalBalls(battingTeam) / 6) +
         "." +
-        (this.bowlers
-          .filter((s) => s.team != team)
-          .reduce((sum, item) => sum + item.balls, 0) %
-          6)
+        (this.totalBalls(battingTeam) % 6)
       );
     },
-    runRate(team) {
-      let balls = this.bowlers
-        .filter((s) => s.team != team)
-        .reduce((sum, item) => sum + item.balls, 0);
-      return (this.totalRun(team) / balls) * 6;
+    runRate(battingTeam) {
+      return (this.totalRun(battingTeam) / this.totalBalls(battingTeam)) * 6;
+    },
+    updateStorage() {
+      let scorecard = {
+        batters: this.batters,
+        bowlers: this.bowlers,
+        battingTeam: this.battingTeam,
+        selectedBatter: this.selectedBatter,
+        selectedBowler: this.selectedBowler,
+        scores: this.scores,
+        scoreUpdates: this.scoreUpdates,
+      };
+      sessionStorage.setItem("scorecard", JSON.stringify(scorecard));
     },
     exportToJson() {
       let scorecard = {
@@ -821,20 +674,21 @@ export default {
     },
   },
   created() {
-    this.teams = JSON.parse(sessionStorage.getItem("teams"));
-    this.players = JSON.parse(sessionStorage.getItem("players"));
-
+    this.playingTeams = JSON.parse(sessionStorage.getItem("playingTeams"));
     let savedScorecard = JSON.parse(sessionStorage.getItem("scorecard"));
+    let matchOngoing = JSON.parse(sessionStorage.getItem("matchOngoing"));
 
-    if (savedScorecard != "" && savedScorecard != null) {
+    if (matchOngoing && savedScorecard) {
       this.batters = savedScorecard.batters;
       this.bowlers = savedScorecard.bowlers;
+      this.battingTeam = savedScorecard.battingTeam;
+      this.selectedBattingNow = savedScorecard.battingTeam.name;
       this.selectedBatter = savedScorecard.selectedBatter;
       this.selectedBowler = savedScorecard.selectedBowler;
-      this.selectedBattingNow = savedScorecard.selectedBattingNow;
-      this.battingNow = savedScorecard.battingNow;
       this.scores = savedScorecard.scores ?? [];
+      this.scoreUpdates = savedScorecard.scoreUpdates ?? [];
       this.matchOngoing = true;
+      this.showScorecard = true;
     }
   },
 };
