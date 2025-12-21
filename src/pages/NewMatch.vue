@@ -1,35 +1,25 @@
 <template>
   <div class="container mt-3">
-    <!-- <button type="button" class="btn btn-outline-success" @click="fillup">
-      Fill up
-    </button> -->
+    <ongoing-confirmation-card
+      :hasOngoingMatch="hasOngoingMatch"
+      :hasOngoingTournament="hasOngoingTournament"
+      @start-new="startNew"
+      v-if="step == 0"
+    ></ongoing-confirmation-card>
     <div class="mb-2" aria-details="Team names" v-if="step >= 1">
       <h3>Enter team names:</h3>
       <div class="row">
-        <div class="col-md-6">
+        <div class="col-md-6" v-for="(team, index) in playingTeams">
           <div class="form-floating mb-3">
             <input
               type="text"
               class="form-control"
-              id="team-01"
+              :id="'team-0' + index + 1"
               placeholder="Rakib's team"
-              v-model="teamNames.t1"
+              v-model="playingTeams[index].name"
               :disabled="isSetTeamNames"
             />
-            <label for="team-01">Team #1</label>
-          </div>
-        </div>
-        <div class="col-md-6">
-          <div class="form-floating mb-3">
-            <input
-              type="text"
-              class="form-control"
-              id="team-02"
-              placeholder="Shaafi's team"
-              v-model="teamNames.t2"
-              :disabled="isSetTeamNames"
-            />
-            <label for="team-02">Team #2</label>
+            <label :for="'team-0' + index + 1">Team #{{ index + 1 }}</label>
           </div>
         </div>
         <div class="col-md-3 col-lg-2 d-grid">
@@ -44,8 +34,8 @@
           <button
             type="button"
             class="btn btn-secondary"
-            @click="editTeamName"
-            v-if="isSetTeamNames"
+            @click="editTeamNames"
+            v-else
           >
             <fa-icon icon="pen-to-square" />
           </button>
@@ -60,7 +50,7 @@
             type="text"
             class="form-control"
             placeholder="For example: 11"
-            v-model="playersPerTeam"
+            v-model="teamSize"
             :disabled="isSetTeamSize"
           />
         </div>
@@ -77,7 +67,7 @@
             type="button"
             class="btn btn-secondary"
             @click="editTeamSize"
-            v-if="isSetTeamSize"
+            v-else
           >
             <fa-icon icon="pen-to-square" />
           </button>
@@ -87,35 +77,23 @@
     <div class="mb-2" aria-details="Team details" v-if="step >= 3">
       <h3>Enter player names:</h3>
       <div class="row gy-2">
-        <div class="col-md-6">
-          <div class="col-12 border border-dark rounded p-3">
-            <p>
-              Team: <span class="fw-bold">{{ teamNames.t1 }}</span>
-            </p>
-            <input
-              v-for="(player, index) in players"
-              :key="index"
-              type="text"
-              class="form-control mb-1"
-              :placeholder="'Player name #' + (parseInt(index) + 1)"
-              v-model="player.t1p"
-            />
-          </div>
-        </div>
-        <div class="col-md-6">
-          <div class="col-12 border border-dark rounded p-3">
-            <p>
-              Team: <span class="fw-bold">{{ teamNames.t2 }}</span>
-            </p>
-            <input
-              v-for="(player, index) in players"
-              :key="index"
-              type="text"
-              class="form-control mb-1"
-              :placeholder="'Player name #' + (parseInt(index) + 1)"
-              v-model="player.t2p"
-            />
-          </div>
+        <div class="col-md-6" v-for="team in playingTeams">
+          <Accordion>
+            <template #header>
+              Team: &nbsp; <span class="fw-bold">{{ team.name }}</span>
+            </template>
+            <template #content>
+              <input
+                v-for="(player, index) in team.players"
+                :key="index"
+                type="text"
+                class="form-control mb-1"
+                :placeholder="'Player name #' + (parseInt(index) + 1)"
+                v-model="team.players[index]"
+                @input="saveState"
+              />
+            </template>
+          </Accordion>
         </div>
         <div class="col-md-3 col-lg-2 d-grid my-2">
           <button
@@ -134,118 +112,193 @@
 <script>
 import toastr from "toastr";
 import _ from "lodash";
+import Accordion from "../components/Accordion.vue";
+import OngoingConfirmationCard from "../components/OngoingConfirmationCard.vue";
 export default {
+  components: { Accordion, OngoingConfirmationCard },
+  beforeMount() {
+    this.hasOngoingMatch =
+      JSON.parse(localStorage.getItem("hasOngoingMatch")) ?? false;
+    this.hasOngoingTournament =
+      JSON.parse(localStorage.getItem("hasOngoingTournament")) ?? false;
+    if (!this.hasOngoingMatch && !this.hasOngoingTournament) {
+      this.step++;
+    }
+  },
   mounted() {
-    sessionStorage.clear();
+    this.loadState();
   },
   data() {
     return {
-      step: 1,
+      step: 0,
       isSetTeamNames: false,
       isSetTeamSize: false,
-      playersPerTeam: null,
-      teamNames: {
-        t1: "",
-        t2: "",
-      },
-      players: [],
+      teamSize: null,
+      playingTeams: [
+        {
+          name: "",
+          players: [],
+        },
+        {
+          name: "",
+          players: [],
+        },
+      ],
+      hasOngoingMatch: false,
+      hasOngoingTournament: false,
     };
   },
   methods: {
     setTeamNames() {
-      if (this.teamNames.t1 && this.teamNames.t2) {
+      if (this.checkAllTeamNamesAreSet() && this.checkTeamNamesAreUnique()) {
         this.isSetTeamNames = true;
-        if (this.step == "1") {
-          this.step++;
-        }
-      } else {
-        toastr.error("Please fill up team names.");
+        this.step++;
+        this.saveState();
       }
     },
     setTeamSize() {
-      if (this.playersPerTeam && !isNaN(this.playersPerTeam)) {
-        this.isSetTeamSize = true;
-        for (
-          let playerCount = this.players.length;
-          playerCount < this.playersPerTeam;
-          playerCount++
-        ) {
-          this.players.push({ t1p: "", t2p: "" });
-        }
-        for (
-          let playerCount = this.players.length;
-          playerCount > this.playersPerTeam;
-          playerCount--
-        ) {
-          this.players.pop();
-        }
-        if (this.step == "2") {
-          this.step++;
-        }
-      } else {
+      if (!this.teamSize || isNaN(this.teamSize)) {
         toastr.error("Please set how many players will play per team.");
+      } else {
+        this.isSetTeamSize = true;
+        this.step++;
+        this.resizeTeam();
+        this.saveState();
       }
     },
-    editTeamName() {
+    resizeTeam() {
+      this.addPlayerIntoEachTeam();
+      this.removePlayerFromEachTeam();
+    },
+    addPlayerIntoEachTeam() {
+      this.playingTeams.map((team) => {
+        for (
+          let playerCount = team.players.length;
+          playerCount < this.teamSize;
+          playerCount++
+        ) {
+          team.players.push("");
+        }
+      });
+    },
+    removePlayerFromEachTeam() {
+      this.playingTeams.map((team) => {
+        for (
+          let playerCount = team.players.length;
+          playerCount > this.teamSize;
+          playerCount--
+        ) {
+          team.players.pop();
+        }
+      });
+    },
+    editTeamNames() {
       this.isSetTeamNames = !this.isSetTeamNames;
+      this.step--;
     },
     editTeamSize() {
       this.isSetTeamSize = !this.isSetTeamSize;
+      this.step--;
     },
     startGame() {
-      if (this.players.some((p) => !p.t1p || !p.t2p)) {
-        toastr.error("Please entry players' names.");
-      } else {
-        if (this.finalCheck()) {
-          this.teamNames.t1 = _.upperFirst(_.camelCase(this.teamNames.t1));
-          this.teamNames.t2 = _.upperFirst(_.camelCase(this.teamNames.t2));
-          sessionStorage.setItem("teams", JSON.stringify(this.teamNames));
-
-          this.playersrs = this.players.map((player) => {
-            player.t1p = _.upperFirst(_.camelCase(player.t1p));
-            player.t2p = _.upperFirst(_.camelCase(player.t2p));
-          });
-          sessionStorage.setItem("players", JSON.stringify(this.players));
-          this.$router.push({
-            name: "ScoreBoard",
-          });
-        }
-      }
-    },
-    fillup() {
-      this.teamNames = {
-        t1: "Shak",
-        t2: "Jawad",
-      };
-      this.players = [
-        { t1p: "Shak", t2p: "Jawad" },
-        { t1p: "Rakib", t2p: "Noman" },
-        { t1p: "Yousuf", t2p: "Johir" },
-      ];
-      this.isSetTeamNames = true;
-      this.isSetTeamSize = true;
-      this.playersPerTeam = 3;
-      this.step = 3;
-    },
-    finalCheck() {
-      if (this.teamNames.t1.toLowerCase() == this.teamNames.t2.toLowerCase()) {
-        toastr.error("Please set different team names.");
-        return false;
-      } else if (
-        this.players.some((p) => {
-          return (
-            this.players.some((p2) => p != p2 && p.t1p == p2.t1p) ||
-            this.players.some((p2) => p != p2 && p.t2p == p2.t2p) ||
-            this.players.some((p2) => p.t1p == p2.t2p) ||
-            this.players.some((p2) => p.t2p == p2.t1p)
-          );
-        })
+      if (
+        this.checkAllTeamMembersAreSet() &&
+        this.checkTeamMembersAreUnique()
       ) {
-        toastr.error("Please set different player names in each team.");
-        return false;
-      } else {
-        return true;
+        this.saveState();
+        this.$router.push({
+          name: "ScoreBoard",
+        });
       }
+    },
+    checkAllTeamNamesAreSet() {
+      const teamNames = this.playingTeams.filter((team) => {
+        return team.name.trim() !== "";
+      });
+      if (teamNames.length < 2) {
+        toastr.error("A game must have at least 2 teams.");
+        return false;
+      }
+      return true;
+    },
+    checkTeamNamesAreUnique() {
+      const lowerCaseTeamNames = this.playingTeams.map((team) =>
+        team.name.toLowerCase()
+      );
+
+      const hasDuplicate =
+        new Set(lowerCaseTeamNames).size !== this.playingTeams.length;
+      if (hasDuplicate) {
+        toastr.error("Set unique team names!");
+        return false;
+      }
+      return true;
+    },
+    checkAllTeamMembersAreSet() {
+      let allPlayers = [];
+      let trimmedAllPlayers = [];
+      this.playingTeams.forEach((team) =>
+        team.players.forEach((player) => {
+          allPlayers.push(player.toLowerCase());
+          if (player.trim() != "") {
+            trimmedAllPlayers.push(player.toLowerCase());
+          }
+        })
+      );
+
+      const isLeftEmpty = trimmedAllPlayers.length != allPlayers.length;
+      if (isLeftEmpty) {
+        toastr.error("Must entry all team players.");
+        return false;
+      }
+      return true;
+    },
+    checkTeamMembersAreUnique() {
+      let allPlayers = [];
+      this.playingTeams.forEach((team) =>
+        team.players.forEach((player) => allPlayers.push(player.toLowerCase()))
+      );
+      let trimmedAllPlayers = allPlayers.map((player) => player.trim());
+      const hasDuplicate =
+        new Set(trimmedAllPlayers).size !== trimmedAllPlayers.length;
+      if (hasDuplicate) {
+        toastr.error("Set unique player names!");
+        return false;
+      }
+      return true;
+    },
+    saveState() {
+      sessionStorage.setItem("hasOngoingMatch", JSON.stringify(true));
+      sessionStorage.setItem("playingTeams", JSON.stringify(this.playingTeams));
+      sessionStorage.setItem("teamSize", JSON.stringify(this.teamSize));
+    },
+    loadState() {
+      const hasOngoingMatch = JSON.parse(
+        sessionStorage.getItem("hasOngoingMatch")
+      );
+      this.hasOngoingMatch = hasOngoingMatch;
+      if (hasOngoingMatch) {
+        const savedPlayingTeams = JSON.parse(
+          sessionStorage.getItem("playingTeams")
+        );
+        if (savedPlayingTeams) {
+          this.playingTeams = savedPlayingTeams;
+          this.isSetTeamNames = true;
+          this.step = 2;
+        }
+        const savedTeamSize = JSON.parse(sessionStorage.getItem("teamSize"));
+        if (savedTeamSize) {
+          this.teamSize = savedTeamSize;
+          this.isSetTeamSize = true;
+          this.step = 3;
+        }
+      } else {
+        sessionStorage.clear()
+      }
+    },
+    startNew() {
+      localStorage.clear();
+      this.step = 1;
     },
   },
 };

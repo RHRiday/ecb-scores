@@ -50,10 +50,13 @@
             type="button"
             class="btn btn-info"
             @click="switchInnings"
-            v-if="battingTeam && matchOngoing"
+            v-if="battingTeam && !isTargetSet && matchOngoing"
           >
             <fa-icon icon="toggle-on" />
           </button>
+          <div class="alert alert-info" v-if="isTargetSet">
+            Target: {{ target }}
+          </div>
         </div>
       </div>
     </div>
@@ -345,10 +348,12 @@ export default {
     new Tooltip(document.body, {
       selector: "[data-bs-toggle='tooltip']",
     });
+    this.loadState();
   },
   data() {
     return {
       $_: _,
+      tournamentTeams: [],
       playingTeams: [],
       selectedBattingNow: "",
       battingTeam: "",
@@ -362,7 +367,9 @@ export default {
       scores: [],
       scoreUpdates: [],
       matchOngoing: false,
+      tournamentOngoing: false,
       showScorecard: false,
+      isTargetSet: false,
     };
   },
   computed: {
@@ -391,6 +398,9 @@ export default {
     reversedScoreUpdates() {
       return this.scoreUpdates.slice().reverse();
     },
+    target() {
+      return this.totalRun(this.bowlingTeam.name) + 1;
+    },
   },
   methods: {
     switchInnings() {
@@ -400,6 +410,8 @@ export default {
           (team) => team.name != this.selectedBattingNow
         ).name;
         this.setBattingTeam();
+        this.isTargetSet = true;
+        this.updateState();
       }
     },
     setBattingTeam() {
@@ -427,7 +439,6 @@ export default {
           team: this.battingTeam.name,
         });
         this.matchOngoing = true;
-        sessionStorage.setItem("matchOngoing", true);
       }
       if (this.batsmanInPitch.length >= 2) {
         document.getElementById("close-choose-batters").click();
@@ -469,7 +480,7 @@ export default {
       this.updateBatterRun();
       this.updateBowlerRun();
       this.checkSwitchBatsman();
-      this.updateStorage();
+      this.updateState();
       this.selectedScores = [];
 
       document.getElementById("close-set-score").click();
@@ -587,10 +598,18 @@ export default {
     markOnCurrentBatsman(batsman) {
       return this.selectedBatter == batsman ? " *" : "";
     },
+    markOnCurrentBatsman(batsman) {
+      return this.selectedBatter == batsman ? " *" : "";
+    },
     checkSelectableScores(item) {
       return (
         this.selectedScores.includes(item) ||
-        this.selectedScores.some((score) => score.show == ".") ||
+        this.selectedScores.some((score) => {
+          return [".", "w", "ro"].includes(score.show);
+        }) ||
+        this.selectedScores.some((score) => {
+          return score.isBall && (item.isBall || item.show == "wd");
+        }) ||
         this.selectedScores.some((score) => {
           return (
             score.show == "wd" &&
@@ -598,7 +617,7 @@ export default {
           );
         }) ||
         this.selectedScores.some((score) => {
-          return score.show == "nb" && item.show != "ro";
+          return score.show == "nb" && [".", "wd", "w"].includes(item.show);
         })
       );
     },
@@ -625,32 +644,32 @@ export default {
         this.scoreUpdates.pop();
       }
     },
-    totalRun(battingTeam) {
+    totalRun(team) {
       return this.scores
-        .filter((s) => s.team == battingTeam)
+        .filter((s) => s.team == team)
         .reduce((sum, item) => sum + item.run, 0);
     },
-    extraRun(battingTeam) {
+    extraRun(team) {
       return this.scores
-        .filter((s) => s.team == battingTeam && !s.isRunByBatsman)
+        .filter((s) => s.team == team && !s.isRunByBatsman)
         .reduce((sum, item) => sum + item.run, 0);
     },
-    totalBalls(battingTeam) {
+    totalBalls(team) {
       return this.bowlers
-        .filter((s) => s.team != battingTeam)
+        .filter((s) => s.team != team)
         .reduce((sum, item) => sum + item.balls, 0);
     },
-    totalOvers(battingTeam) {
+    totalOvers(team) {
       return (
-        Math.floor(this.totalBalls(battingTeam) / 6) +
+        Math.floor(this.totalBalls(team) / 6) +
         "." +
-        (this.totalBalls(battingTeam) % 6)
+        (this.totalBalls(team) % 6)
       );
     },
-    runRate(battingTeam) {
-      return (this.totalRun(battingTeam) / this.totalBalls(battingTeam)) * 6;
+    runRate(team) {
+      return (this.totalRun(team) / this.totalBalls(team)) * 6;
     },
-    updateStorage() {
+    updateState() {
       let scorecard = {
         batters: this.batters,
         bowlers: this.bowlers,
@@ -659,8 +678,25 @@ export default {
         selectedBowler: this.selectedBowler,
         scores: this.scores,
         scoreUpdates: this.scoreUpdates,
+        isTargetSet: this.isTargetSet,
       };
       sessionStorage.setItem("scorecard", JSON.stringify(scorecard));
+    },
+    loadState() {
+      let savedScorecard = JSON.parse(localStorage.getItem("scorecard"));
+      if (savedScorecard) {
+        this.batters = savedScorecard.batters;
+        this.bowlers = savedScorecard.bowlers;
+        this.battingTeam = savedScorecard.battingTeam;
+        this.selectedBattingNow = savedScorecard.battingTeam.name;
+        this.selectedBatter = savedScorecard.selectedBatter;
+        this.selectedBowler = savedScorecard.selectedBowler;
+        this.scores = savedScorecard.scores ?? [];
+        this.scoreUpdates = savedScorecard.scoreUpdates ?? [];
+        this.matchOngoing = true;
+        this.showScorecard = true;
+        this.isTargetSet = savedScorecard.isTargetSet;
+      }
     },
     exportToJson() {
       let scorecard = {
@@ -674,21 +710,28 @@ export default {
     },
   },
   created() {
-    this.playingTeams = JSON.parse(sessionStorage.getItem("playingTeams"));
-    let savedScorecard = JSON.parse(sessionStorage.getItem("scorecard"));
-    let matchOngoing = JSON.parse(sessionStorage.getItem("matchOngoing"));
+    Object.keys(sessionStorage).forEach((key) => {
+      localStorage.setItem(key, sessionStorage.getItem(key));
+    });
+    this.matchOngoing = JSON.parse(localStorage.getItem("hasOngoingMatch"));
+    this.tournamentOngoing = JSON.parse(
+      localStorage.getItem("hasOngoingTournamnent")
+    );
+    if (!this.matchOngoing && !this.tournamentOngoing) {
+      toastr.error("Please start a new match or a tournament!");
+      this.$router.push({
+        name: "Home",
+      });
+    } else if (this.tournamentOngoing) {
+      this.tournamentTeams =
+        JSON.parse(localStorage.getItem("tournamentTeams")) ?? [];
+    }
 
-    if (matchOngoing && savedScorecard) {
-      this.batters = savedScorecard.batters;
-      this.bowlers = savedScorecard.bowlers;
-      this.battingTeam = savedScorecard.battingTeam;
-      this.selectedBattingNow = savedScorecard.battingTeam.name;
-      this.selectedBatter = savedScorecard.selectedBatter;
-      this.selectedBowler = savedScorecard.selectedBowler;
-      this.scores = savedScorecard.scores ?? [];
-      this.scoreUpdates = savedScorecard.scoreUpdates ?? [];
-      this.matchOngoing = true;
-      this.showScorecard = true;
+    this.playingTeams = JSON.parse(localStorage.getItem("playingTeams"));
+
+    if (this.matchOngoing || this.tournamentOngoing) {
+      this.loadState();
+      sessionStorage.clear();
     }
   },
 };

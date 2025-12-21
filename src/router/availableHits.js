@@ -104,6 +104,14 @@ const availableHits = [
     isBall: true,
   },
   {
+    show: "6b",
+    run: 6,
+    isOut: false,
+    isRunByBatsman: false,
+    isRunByBowler: false,
+    isBall: true,
+  },
+  {
     show: "w",
     run: 0,
     isOut: true,

@@ -1,8 +1,14 @@
 <template>
   <div class="container mt-3">
-    <button type="button" class="btn btn-outline-success" @click="fillup">
+    <ongoing-confirmation-card
+      :hasOngoingMatch="hasOngoingMatch"
+      :hasOngoingTournament="hasOngoingTournament"
+      @start-new="startNew"
+      v-if="step == 0"
+    ></ongoing-confirmation-card>
+    <!-- <button type="button" class="btn btn-outline-success" @click="fillup">
       Fill up
-    </button>
+    </button> -->
     <div class="mb-2" aria-details="Team names" v-if="step >= 1">
       <h3>Enter team names:</h3>
       <div class="row">
@@ -102,6 +108,7 @@
                 :placeholder="'Player name #' + (parseInt(index) + 1)"
                 v-model="team.players[index]"
                 :disabled="hasTournamentBegun"
+                @input="saveState"
               />
             </template>
           </Accordion>
@@ -165,14 +172,24 @@
 import toastr from "toastr";
 import _ from "lodash";
 import Accordion from "../components/Accordion.vue";
+import OngoingConfirmationCard from "../components/OngoingConfirmationCard.vue";
 export default {
-  components: { Accordion },
+  components: { Accordion, OngoingConfirmationCard },
+  beforeMount() {
+    this.hasOngoingMatch =
+      JSON.parse(localStorage.getItem("hasOngoingMatch")) ?? false;
+    this.hasOngoingTournament =
+      JSON.parse(localStorage.getItem("hasOngoingTournament")) ?? false;
+    if (!this.hasOngoingMatch && !this.hasOngoingTournament) {
+      this.step++;
+    }
+  },
   mounted() {
-    sessionStorage.clear();
+    this.loadState();
   },
   data() {
     return {
-      step: 1,
+      step: 0,
       isSetTeamNames: false,
       isSetTeamSize: false,
       hasTournamentBegun: false,
@@ -184,6 +201,8 @@ export default {
         },
       ],
       playingTeams: [],
+      hasOngoingMatch: false,
+      hasOngoingTournament: false,
     };
   },
   methods: {
@@ -200,6 +219,7 @@ export default {
           this.resizeTeam();
         }
         this.step++;
+        this.saveState();
       }
     },
     setTeamSize() {
@@ -209,6 +229,7 @@ export default {
         this.isSetTeamSize = true;
         this.step++;
         this.resizeTeam();
+        this.saveState();
       }
     },
     resizeTeam() {
@@ -242,8 +263,6 @@ export default {
         this.checkAllTeamMembersAreSet() &&
         this.checkTeamMembersAreUnique()
       ) {
-        localStorage.setItem("hasOngoingTournament", JSON.stringify(true));
-        localStorage.setItem("tournamentTeams", JSON.stringify(this.allTeams));
         this.step++;
         this.hasTournamentBegun = true;
         this.playingTeams = [
@@ -256,9 +275,7 @@ export default {
             players: [],
           },
         ];
-        // this.$router.push({
-        //   name: "ScoreBoard",
-        // });
+        this.saveState();
       }
     },
     editTeamNames() {
@@ -288,40 +305,11 @@ export default {
       } else if (isDuplicate) {
         toastr.error("Two teams are same!");
       } else {
-        sessionStorage.setItem("hasOngoingTournament", true);
-        sessionStorage.setItem(
-          "playingTeams",
-          JSON.stringify(this.playingTeams)
-        );
-
+        this.saveState();
         this.$router.push({
           name: "ScoreBoard",
         });
       }
-    },
-    fillup() {
-      const hasOngoingTournament = JSON.parse(
-        localStorage.getItem("hasOngoingTournament")
-      );
-
-      if (hasOngoingTournament) {
-        this.allTeams = JSON.parse(localStorage.getItem("tournamentTeams"));
-      } else {
-        this.allTeams = [
-          {
-            name: "Shak",
-            players: ["Shak", "Rakib"],
-          },
-          {
-            name: "Jawad",
-            players: ["Jawad", "Rifat"],
-          },
-        ];
-      }
-      this.isSetTeamNames = true;
-      this.isSetTeamSize = true;
-      this.teamSize = this.allTeams.length;
-      this.step = 3;
     },
     checkAllTeamNamesAreSet() {
       this.allTeams.map((team, index) => {
@@ -362,7 +350,7 @@ export default {
 
       const isLeftEmpty = trimmedAllPlayers.length != allPlayers.length;
       if (isLeftEmpty) {
-        toastr.error("Must input all team players.");
+        toastr.error("Must entry all team players.");
         return false;
       }
       return true;
@@ -380,6 +368,48 @@ export default {
         return false;
       }
       return true;
+    },
+    saveState() {
+      sessionStorage.setItem("hasOngoingTournament", JSON.stringify(true));
+      sessionStorage.setItem("tournamentTeams", JSON.stringify(this.allTeams));
+      sessionStorage.setItem("teamSize", JSON.stringify(this.teamSize));
+      sessionStorage.setItem("playingTeams", JSON.stringify(this.playingTeams));
+    },
+    loadState() {
+      const hasOngoingTournament = JSON.parse(
+        sessionStorage.getItem("hasOngoingTournament")
+      );
+      this.hasOngoingTournament = hasOngoingTournament;
+      if (hasOngoingTournament) {
+        const savedAllTeams = JSON.parse(
+          sessionStorage.getItem("tournamentTeams")
+        );
+        if (savedAllTeams) {
+          this.allTeams = savedAllTeams;
+          this.isSetTeamNames = true;
+          this.step = 2;
+        }
+        const savedTeamSize = JSON.parse(sessionStorage.getItem("teamSize"));
+        if (savedTeamSize) {
+          this.teamSize = savedTeamSize;
+          this.isSetTeamSize = true;
+          this.step = 3;
+        }
+        const savedPlayingTeams = JSON.parse(
+          sessionStorage.getItem("playingTeams")
+        );
+        if (savedPlayingTeams && savedPlayingTeams.length) {
+          this.hasTournamentBegun = true;
+          this.step = 4;
+          this.playingTeams = savedPlayingTeams;
+        }
+      } else {
+        sessionStorage.clear();
+      }
+    },
+    startNew() {
+      localStorage.clear();
+      this.step = 1;
     },
   },
 };
