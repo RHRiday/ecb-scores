@@ -6,6 +6,7 @@ import Home from "../pages/Home.vue";
 import NewMatch from "../pages/NewMatch.vue";
 import NewTournament from "../pages/NewTournament.vue";
 import ScoreBoard from "../pages/ScoreBoard.vue";
+import About from "../pages/About.vue";
 
 const routes = [
   {
@@ -21,7 +22,7 @@ const routes = [
     name: "NewMatch",
     component: NewMatch,
     meta: {
-      title: "New match",
+      title: "New Match",
     },
   },
   {
@@ -38,6 +39,14 @@ const routes = [
     component: ScoreBoard,
     meta: {
       title: "Scoreboard",
+    },
+  },
+  {
+    path: "/about",
+    name: "About",
+    component: About,
+    meta: {
+      title: "About",
     },
   },
 ];

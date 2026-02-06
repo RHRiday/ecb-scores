@@ -88,6 +88,14 @@ const availableHits = [
     isBall: true,
   },
   {
+    show: "3b",
+    run: 2,
+    isOut: false,
+    isRunByBatsman: false,
+    isRunByBowler: false,
+    isBall: true,
+  },
+  {
     show: "4b",
     run: 4,
     isOut: false,

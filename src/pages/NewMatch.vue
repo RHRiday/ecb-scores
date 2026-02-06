@@ -1,42 +1,22 @@
 <template>
   <div class="container mt-3">
-    <ongoing-confirmation-card
-      :hasOngoingMatch="hasOngoingMatch"
-      :hasOngoingTournament="hasOngoingTournament"
-      @start-new="startNew"
-      v-if="step == 0"
-    ></ongoing-confirmation-card>
+    <ongoing-confirmation-card :hasOngoingMatch="hasOngoingMatch" :hasOngoingTournament="hasOngoingTournament"
+      @start-new="startNew" v-if="step == 0"></ongoing-confirmation-card>
     <div class="mb-2" aria-details="Team names" v-if="step >= 1">
       <h3>Enter team names:</h3>
       <div class="row">
         <div class="col-md-6" v-for="(team, index) in playingTeams">
           <div class="form-floating mb-3">
-            <input
-              type="text"
-              class="form-control"
-              :id="'team-0' + index + 1"
-              placeholder="Rakib's team"
-              v-model="playingTeams[index].name"
-              :disabled="isSetTeamNames"
-            />
+            <input type="text" class="form-control" :id="'team-0' + index + 1" placeholder="Rakib's team"
+              v-model="playingTeams[index].name" :disabled="isSetTeamNames" />
             <label :for="'team-0' + index + 1">Team #{{ index + 1 }}</label>
           </div>
         </div>
         <div class="col-md-3 col-lg-2 d-grid">
-          <button
-            type="button"
-            class="btn btn-success"
-            @click="setTeamNames"
-            v-if="!isSetTeamNames"
-          >
+          <button type="button" class="btn btn-success" @click="setTeamNames" v-if="!isSetTeamNames">
             Set teams
           </button>
-          <button
-            type="button"
-            class="btn btn-secondary"
-            @click="editTeamNames"
-            v-else
-          >
+          <button type="button" class="btn btn-secondary" @click="editTeamNames" v-else>
             <fa-icon icon="pen-to-square" />
           </button>
         </div>
@@ -46,29 +26,14 @@
       <h3>Players per team:</h3>
       <div class="row">
         <div class="col-md-6 gy-2">
-          <input
-            type="text"
-            class="form-control"
-            placeholder="For example: 11"
-            v-model="teamSize"
-            :disabled="isSetTeamSize"
-          />
+          <input type="text" class="form-control" placeholder="For example: 11" v-model="teamSize"
+            :disabled="isSetTeamSize" />
         </div>
         <div class="col-md-3 col-lg-2 d-grid gy-2">
-          <button
-            type="button"
-            class="btn btn-success"
-            @click="setTeamSize"
-            v-if="!isSetTeamSize"
-          >
+          <button type="button" class="btn btn-success" @click="setTeamSize" v-if="!isSetTeamSize">
             Add team
           </button>
-          <button
-            type="button"
-            class="btn btn-secondary"
-            @click="editTeamSize"
-            v-else
-          >
+          <button type="button" class="btn btn-secondary" @click="editTeamSize" v-else>
             <fa-icon icon="pen-to-square" />
           </button>
         </div>
@@ -83,24 +48,14 @@
               Team: &nbsp; <span class="fw-bold">{{ team.name }}</span>
             </template>
             <template #content>
-              <input
-                v-for="(player, index) in team.players"
-                :key="index"
-                type="text"
-                class="form-control mb-1"
-                :placeholder="'Player name #' + (parseInt(index) + 1)"
-                v-model="team.players[index]"
-                @input="saveState"
-              />
+              <input v-for="(player, index) in team.players" :key="index" type="text" class="form-control mb-1"
+                :placeholder="'Player name #' + (parseInt(index) + 1)" v-model="team.players[index]"
+                @input="saveState" />
             </template>
           </Accordion>
         </div>
         <div class="col-md-3 col-lg-2 d-grid my-2">
-          <button
-            type="button"
-            class="btn btn-outline-success"
-            @click="startGame"
-          >
+          <button type="button" class="btn btn-outline-success" @click="startGame">
             Begin game
           </button>
         </div>
@@ -273,10 +228,7 @@ export default {
       sessionStorage.setItem("teamSize", JSON.stringify(this.teamSize));
     },
     loadState() {
-      const hasOngoingMatch =
-        JSON.parse(sessionStorage.getItem("hasOngoingMatch")) ?? false;
-      this.hasOngoingMatch = hasOngoingMatch;
-      if (hasOngoingMatch) {
+      if (!this.hasOngoingMatch) {
         const savedPlayingTeams = JSON.parse(
           sessionStorage.getItem("playingTeams")
         );
@@ -291,8 +243,6 @@ export default {
           this.isSetTeamSize = true;
           this.step = 3;
         }
-      } else {
-        sessionStorage.clear();
       }
     },
     startNew() {

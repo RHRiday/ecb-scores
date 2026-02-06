@@ -1,37 +1,20 @@
 <template>
   <div class="container mt-3">
-    <ongoing-confirmation-card
-      :hasOngoingMatch="hasOngoingMatch"
-      :hasOngoingTournament="hasOngoingTournament"
-      @start-new="startNew"
-      v-if="step == 0"
-    ></ongoing-confirmation-card>
+    <ongoing-confirmation-card :hasOngoingMatch="hasOngoingMatch" :hasOngoingTournament="hasOngoingTournament"
+      @start-new="startNew" v-if="step == 0"></ongoing-confirmation-card>
     <!-- <button type="button" class="btn btn-outline-success" @click="fillup">
       Fill up
     </button> -->
     <div class="mb-2" aria-details="Team names" v-if="step >= 1">
       <h3>Enter team names:</h3>
       <div class="row">
-        <div
-          v-for="(team, teamIndex) in allTeams"
-          class="col-md-6"
-          :class="
-            'col-' +
-            (teamIndex + 1 != allTeams.length || isSetTeamNames ? '12' : '10')
-          "
-        >
+        <div v-for="(team, teamIndex) in allTeams" class="col-md-6" :class="'col-' +
+          (teamIndex + 1 != allTeams.length || isSetTeamNames ? '12' : '10')
+          ">
           <div class="form-floating mb-3">
-            <input
-              type="text"
-              class="form-control"
-              :id="'team-' + teamIndex + 1"
-              placeholder="Rakib's team"
-              v-model="allTeams[teamIndex].name"
-              :disabled="isSetTeamNames"
-            />
-            <label :for="'team-' + teamIndex + 1"
-              >Team #{{ teamIndex + 1 }}</label
-            >
+            <input type="text" class="form-control" :id="'team-' + teamIndex + 1" placeholder="Rakib's team"
+              v-model="allTeams[teamIndex].name" :disabled="isSetTeamNames" />
+            <label :for="'team-' + teamIndex + 1">Team #{{ teamIndex + 1 }}</label>
           </div>
         </div>
         <div class="col-2" v-if="!isSetTeamNames">
@@ -40,20 +23,10 @@
           </button>
         </div>
         <div class="col-md-3 mt-2 col-lg-2 d-grid">
-          <button
-            type="button"
-            class="btn btn-success"
-            @click="setTeamNames"
-            v-if="!isSetTeamNames"
-          >
+          <button type="button" class="btn btn-success" @click="setTeamNames" v-if="!isSetTeamNames">
             Set teams
           </button>
-          <button
-            type="button"
-            class="btn btn-secondary"
-            @click="editTeamNames"
-            v-else
-          >
+          <button type="button" class="btn btn-secondary" @click="editTeamNames" v-else>
             <fa-icon icon="pen-to-square" />
           </button>
         </div>
@@ -63,29 +36,14 @@
       <h3>Players per team:</h3>
       <div class="row">
         <div class="col-md-6 gy-2">
-          <input
-            type="text"
-            class="form-control"
-            placeholder="For example: 11"
-            v-model="teamSize"
-            :disabled="isSetTeamSize"
-          />
+          <input type="text" class="form-control" placeholder="For example: 11" v-model="teamSize"
+            :disabled="isSetTeamSize" />
         </div>
         <div class="col-md-3 col-lg-2 d-grid gy-2">
-          <button
-            type="button"
-            class="btn btn-success"
-            @click="setTeamSize"
-            v-if="!isSetTeamSize"
-          >
+          <button type="button" class="btn btn-success" @click="setTeamSize" v-if="!isSetTeamSize">
             Add team
           </button>
-          <button
-            type="button"
-            class="btn btn-secondary"
-            @click="editTeamSize"
-            v-else
-          >
+          <button type="button" class="btn btn-secondary" @click="editTeamSize" v-else>
             <fa-icon icon="pen-to-square" />
           </button>
         </div>
@@ -100,66 +58,37 @@
               Team: &nbsp; <span class="fw-bold">{{ team.name }}</span>
             </template>
             <template #content>
-              <input
-                v-for="(player, index) in team.players"
-                :key="index"
-                type="text"
-                class="form-control mb-1"
-                :placeholder="'Player name #' + (parseInt(index) + 1)"
-                v-model="team.players[index]"
-                :disabled="hasTournamentBegun"
-                @input="saveState"
-              />
+              <input v-for="(player, index) in team.players" :key="index" type="text" class="form-control mb-1"
+                :placeholder="'Player name #' + (parseInt(index) + 1)" v-model="team.players[index]"
+                :disabled="hasTournamentBegun" @input="saveState" />
             </template>
           </Accordion>
         </div>
         <div class="col-md-3 col-lg-2 d-grid my-2">
-          <button
-            type="button"
-            class="btn btn-outline-success"
-            @click="startTournament"
-            v-if="!hasTournamentBegun"
-          >
+          <button type="button" class="btn btn-outline-success" @click="startTournament" v-if="!hasTournamentBegun">
             Begin tournament
           </button>
-          <button
-            type="button"
-            class="btn btn-secondary"
-            @click="redoTournament"
-            v-else
-          >
+          <button type="button" class="btn btn-secondary" @click="redoTournament" v-else>
             Re-entry
           </button>
         </div>
       </div>
     </div>
-    <div
-      class="mb-2"
-      aria-details="Match setup"
-      v-if="hasTournamentBegun && step >= 4"
-    >
+    <div class="mb-2" aria-details="Match setup" v-if="hasTournamentBegun && step >= 4">
       <h3>Select 2 playing teams:</h3>
       <div class="row gy-3">
         <div class="col-md-6" v-for="(playingTeam, index) in playingTeams">
           <label :for="'playing-team-' + index + 1">
             Team #0{{ index + 1 }}:
           </label>
-          <select
-            class="form-select mt-2"
-            :id="'playing-team-' + index + 1"
-            v-model="playingTeams[index]"
-          >
+          <select class="form-select mt-2" :id="'playing-team-' + index + 1" v-model="playingTeams[index]">
             <option v-for="team in allTeams" :value="team">
               {{ team.name }}
             </option>
           </select>
         </div>
         <div class="col-md-3 col-lg-2 d-grid my-2">
-          <button
-            type="button"
-            class="btn btn-outline-success"
-            @click="setPlayingTeams"
-          >
+          <button type="button" class="btn btn-outline-success" @click="setPlayingTeams">
             Start match
           </button>
         </div>
@@ -376,11 +305,7 @@ export default {
       sessionStorage.setItem("playingTeams", JSON.stringify(this.playingTeams));
     },
     loadState() {
-      const hasOngoingTournament = JSON.parse(
-        sessionStorage.getItem("hasOngoingTournament")
-      ) ?? false;
-      this.hasOngoingTournament = hasOngoingTournament;
-      if (hasOngoingTournament) {
+      if (!this.hasOngoingTournament) {
         const savedAllTeams = JSON.parse(
           sessionStorage.getItem("tournamentTeams")
         );
@@ -403,8 +328,6 @@ export default {
           this.step = 4;
           this.playingTeams = savedPlayingTeams;
         }
-      } else {
-        sessionStorage.clear();
       }
     },
     startNew() {

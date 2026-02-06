@@ -54,7 +54,7 @@
 </template>
 
 <script>
-import router from "./../router/route.js";
+import router from "../plugins/route.js";
 export default {
   name: "Nav",
   data() {

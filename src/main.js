@@ -1,6 +1,6 @@
 import { createApp } from "vue";
 import App from "./App.vue";
-import router from "./router/route";
+import router from "./plugins/route";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "toastr/build/toastr.min.css";
@@ -22,6 +22,7 @@ import {
   faUpload,
   faWalking,
 } from "@fortawesome/free-solid-svg-icons";
+import { faGithub } from "@fortawesome/free-brands-svg-icons";
 
 library.add(
   faBaseballBall,
@@ -37,6 +38,7 @@ library.add(
   faRotateLeft,
   faToggleOn,
   faUpload,
-  faWalking
+  faWalking,
+  faGithub,
 );
 createApp(App).use(router).component("fa-icon", FontAwesomeIcon).mount("#app");

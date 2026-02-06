@@ -341,7 +341,7 @@
 
 <script>
 import toastr from "toastr";
-import availableHits from "../router/availableHits.js";
+import availableHits from "../plugins/availableHits.js";
 import { Tooltip } from "bootstrap";
 import { saveAs } from "file-saver";
 import ScoreModal from "../components/ScoreModal.vue";
@@ -712,7 +712,7 @@ export default {
         isTargetSet: this.isTargetSet,
         isMatchEnd: this.isMatchWon,
       };
-      sessionStorage.setItem("scorecard", JSON.stringify(scorecard));
+      localStorage.setItem("scorecard", JSON.stringify(scorecard));
     },
     loadState() {
       let savedScorecard = JSON.parse(localStorage.getItem("scorecard"));
