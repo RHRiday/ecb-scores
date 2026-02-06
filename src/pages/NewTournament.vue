@@ -378,7 +378,7 @@ export default {
     loadState() {
       const hasOngoingTournament = JSON.parse(
         sessionStorage.getItem("hasOngoingTournament")
-      );
+      ) ?? false;
       this.hasOngoingTournament = hasOngoingTournament;
       if (hasOngoingTournament) {
         const savedAllTeams = JSON.parse(

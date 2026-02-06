@@ -273,9 +273,8 @@ export default {
       sessionStorage.setItem("teamSize", JSON.stringify(this.teamSize));
     },
     loadState() {
-      const hasOngoingMatch = JSON.parse(
-        sessionStorage.getItem("hasOngoingMatch")
-      );
+      const hasOngoingMatch =
+        JSON.parse(sessionStorage.getItem("hasOngoingMatch")) ?? false;
       this.hasOngoingMatch = hasOngoingMatch;
       if (hasOngoingMatch) {
         const savedPlayingTeams = JSON.parse(
@@ -293,7 +292,7 @@ export default {
           this.step = 3;
         }
       } else {
-        sessionStorage.clear()
+        sessionStorage.clear();
       }
     },
     startNew() {

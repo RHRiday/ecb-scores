@@ -3,7 +3,7 @@
     <nav class="navbar bg-body-tertiary navbar-light bg-light">
       <div class="container-fluid">
         <router-link to="/" class="navbar-brand">
-          <img src="/cricket.svg" width="32px" />
+          <img src="./../../public/cricket.svg" width="32px" />
           ECB</router-link
         >
         <button
@@ -24,7 +24,7 @@
         >
           <div class="offcanvas-header">
             <h5 class="offcanvas-title" id="mainNavbarLabel">
-              <img src="/cricket.svg" width="32px" />ECB
+              <img src="./../../public/cricket.svg" width="32px" />ECB
             </h5>
             <button
               type="button"

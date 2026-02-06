@@ -46,17 +46,19 @@
           >
             <fa-icon icon="pen-to-square" />
           </button>
-          <button
-            type="button"
-            class="btn btn-info"
-            @click="switchInnings"
+          <ConfirmationModal
+            :hasTrigger="true"
+            header="Confirm switch innings?"
+            @switch-innings="switchInnings"
             v-if="battingTeam && !isTargetSet && matchOngoing"
-          >
-            <fa-icon icon="toggle-on" />
-          </button>
+          />
           <div class="alert alert-info" v-if="isTargetSet">
             Target: {{ target }}
           </div>
+          <ConfirmationModal
+            :header="'Match won by ' + wonBy"
+            v-if="isMatchWon"
+          />
         </div>
       </div>
     </div>
@@ -71,6 +73,7 @@
         :secondButtonClass="'primary'"
         :modalCondition="battingTeam"
         :tooltipIcons="['walking', 'plus']"
+        v-if="!isMatchWon"
       >
         <template #selectOption>
           <div
@@ -105,6 +108,7 @@
         :secondButtonClass="'primary'"
         :modalCondition="bowlingTeam"
         :tooltipIcons="['person-running', 'baseball-ball']"
+        v-if="!isMatchWon"
       >
         <template #selectOption>
           <div
@@ -135,6 +139,7 @@
         :secondButtonClass="'warning'"
         :modalCondition="canSetScore"
         :tooltipIcons="['pen', 'clipboard-list']"
+        v-if="!isMatchWon"
       >
         <template #selectOption
           ><div
@@ -174,7 +179,7 @@
           />
         </button>
       </div>
-      <div aria-details="Switch batter" class="col-auto">
+      <div aria-details="Switch batter" class="col-auto" v-if="!isMatchWon">
         <button
           type="button"
           class="btn btn-primary"
@@ -341,9 +346,10 @@ import { Tooltip } from "bootstrap";
 import { saveAs } from "file-saver";
 import ScoreModal from "../components/ScoreModal.vue";
 import ButtonTooltip from "../components/ButtonTooltip.vue";
+import ConfirmationModal from "../components/ConfirmationModal.vue";
 import _ from "lodash";
 export default {
-  components: { ScoreModal, ButtonTooltip },
+  components: { ScoreModal, ButtonTooltip, ConfirmationModal },
   mounted() {
     new Tooltip(document.body, {
       selector: "[data-bs-toggle='tooltip']",
@@ -370,6 +376,7 @@ export default {
       tournamentOngoing: false,
       showScorecard: false,
       isTargetSet: false,
+      isMatchWon: false,
     };
   },
   computed: {
@@ -401,18 +408,28 @@ export default {
     target() {
       return this.totalRun(this.bowlingTeam.name) + 1;
     },
+    wonBy() {
+      if (this.isMatchWon) {
+        const teamRuns = this.playingTeams.map((team) => {
+          return {
+            teamName: team.name,
+            run: this.totalRun(team.name),
+          };
+        });
+        return teamRuns.reduce((prev, current) =>
+          prev.run > current.run ? prev.teamName : current.teamName
+        );
+      }
+    },
   },
   methods: {
     switchInnings() {
-      let permitted = window.confirm("Are you sure?");
-      if (permitted) {
-        this.selectedBattingNow = this.playingTeams.find(
-          (team) => team.name != this.selectedBattingNow
-        ).name;
-        this.setBattingTeam();
-        this.isTargetSet = true;
-        this.updateState();
-      }
+      this.selectedBattingNow = this.playingTeams.find(
+        (team) => team.name != this.selectedBattingNow
+      ).name;
+      this.setBattingTeam();
+      this.isTargetSet = true;
+      this.updateState();
     },
     setBattingTeam() {
       this.selectedBatter = "";
@@ -480,6 +497,7 @@ export default {
       this.updateBatterRun();
       this.updateBowlerRun();
       this.checkSwitchBatsman();
+      this.checkMatchEnd();
       this.updateState();
       this.selectedScores = [];
 
@@ -582,6 +600,18 @@ export default {
         }
       });
     },
+    checkMatchEnd() {
+      const outBatsmen = this.batters.filter((batsman) => {
+        return batsman.team == this.battingTeam.name && batsman.isOut;
+      }).length;
+      const allOut = outBatsmen + 1 >= this.battingTeam.players.length;
+      const targetReached =
+        this.totalRun(this.battingTeam.name) >
+        this.totalRun(this.bowlingTeam.name);
+      if (this.isTargetSet && (targetReached || allOut)) {
+        this.isMatchWon = true;
+      }
+    },
     adjustDeliveryCount() {
       if (
         this.selectedScores.some((score) => ["wd", "nb"].includes(score.show))
@@ -637,6 +667,7 @@ export default {
       this.selectedBatter = nonStrike.name;
     },
     undoPrevScore() {
+      this.isMatchWon = false;
       const popped = this.scores.pop();
       this.updateBatterRun();
       this.updateBowlerRun();
@@ -679,6 +710,7 @@ export default {
         scores: this.scores,
         scoreUpdates: this.scoreUpdates,
         isTargetSet: this.isTargetSet,
+        isMatchEnd: this.isMatchWon,
       };
       sessionStorage.setItem("scorecard", JSON.stringify(scorecard));
     },
@@ -696,6 +728,7 @@ export default {
         this.matchOngoing = true;
         this.showScorecard = true;
         this.isTargetSet = savedScorecard.isTargetSet;
+        this.checkMatchEnd();
       }
     },
     exportToJson() {
@@ -715,7 +748,7 @@ export default {
     });
     this.matchOngoing = JSON.parse(localStorage.getItem("hasOngoingMatch"));
     this.tournamentOngoing = JSON.parse(
-      localStorage.getItem("hasOngoingTournamnent")
+      localStorage.getItem("hasOngoingTournament")
     );
     if (!this.matchOngoing && !this.tournamentOngoing) {
       toastr.error("Please start a new match or a tournament!");

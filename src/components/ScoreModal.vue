@@ -8,7 +8,7 @@
     >
       <button-tooltip :header="header" :icons="tooltipIcons" />
     </button>
-    <div class="modal fade" ref="scoreModal" :id="slugify(header)">
+    <div class="modal fade" ref="scoreModal">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header">
