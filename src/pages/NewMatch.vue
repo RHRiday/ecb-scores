@@ -226,9 +226,12 @@ export default {
       sessionStorage.setItem("hasOngoingMatch", JSON.stringify(true));
       sessionStorage.setItem("playingTeams", JSON.stringify(this.playingTeams));
       sessionStorage.setItem("teamSize", JSON.stringify(this.teamSize));
+      sessionStorage.removeItem("hasOngoingTournament");
     },
     loadState() {
-      if (!this.hasOngoingMatch) {
+      const hasOngoingMatch = JSON.parse(sessionStorage.getItem('hasOngoingMatch')) ?? false;
+
+      if (hasOngoingMatch) {
         const savedPlayingTeams = JSON.parse(
           sessionStorage.getItem("playingTeams")
         );
