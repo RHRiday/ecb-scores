@@ -13,6 +13,7 @@ import {
   faCirclePlus,
   faClipboardList,
   faEarthAfrica,
+  faForwardStep,
   faHome,
   faPen,
   faPenToSquare,
@@ -24,6 +25,8 @@ import {
   faWalking,
 } from "@fortawesome/free-solid-svg-icons";
 import { faGithub } from "@fortawesome/free-brands-svg-icons";
+import toastr from "toastr";
+import { Capacitor } from "@capacitor/core";
 
 library.add(
   faBaseballBall,
@@ -31,6 +34,8 @@ library.add(
   faCirclePlus,
   faClipboardList,
   faEarthAfrica,
+  faForwardStep,
+  faGithub,
   faHome,
   faPen,
   faPenToSquare,
@@ -40,7 +45,28 @@ library.add(
   faToggleOn,
   faUpload,
   faWalking,
-  faGithub,
 );
-createApp(App).use(router).component("fa-icon", FontAwesomeIcon).mount("#app");
+
+toastr.options = {
+  closeButton: false,
+  debug: false,
+  newestOnTop: false,
+  progressBar: false,
+  positionClass: Capacitor.isNativePlatform()
+    ? "toast-bottom-center"
+    : "toast-bottom-right",
+  preventDuplicates: true,
+  onclick: null,
+  showDuration: "300",
+  hideDuration: "500",
+  timeOut: "3000",
+  extendedTimeOut: "1000",
+  showEasing: "swing",
+  hideEasing: "linear",
+  showMethod: "fadeIn",
+  hideMethod: "fadeOut",
+};
+const app = createApp(App);
+app.config.globalProperties.toastr$ = toastr;
+app.use(router).component("fa-icon", FontAwesomeIcon).mount("#app");
 setupBackButton(router);

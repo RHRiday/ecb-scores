@@ -1,12 +1,10 @@
-import {
-  createRouter,
-  createWebHashHistory,
-} from "vue-router";
+import { createRouter, createWebHashHistory } from "vue-router";
 import Home from "../pages/Home.vue";
 import NewMatch from "../pages/NewMatch.vue";
 import NewTournament from "../pages/NewTournament.vue";
 import ScoreBoard from "../pages/ScoreBoard.vue";
 import About from "../pages/About.vue";
+import Tutorial from "../pages/Tutorial.vue";
 
 const routes = [
   {
@@ -47,6 +45,14 @@ const routes = [
     component: About,
     meta: {
       title: "About",
+    },
+  },
+  {
+    path: "/tutorial",
+    name: "Tutorial",
+    component: Tutorial,
+    meta: {
+      title: "Tutorial",
     },
   },
 ];

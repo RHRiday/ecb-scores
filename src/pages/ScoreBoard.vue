@@ -4,95 +4,48 @@
       <h3>Batting team<span v-if="!battingTeam">?</span></h3>
       <div class="row gy-2">
         <template v-for="(team, index) in playingTeams" :key="index">
-          <div
-            class="col-md-3 col-lg-2 d-grid"
-            v-if="battingTeam == '' || battingTeam.name == team.name"
-          >
-            <button
-              type="button"
-              class="btn"
-              :class="{
-                'btn-info':
-                  selectedBattingNow == team.name && battingTeam == '',
-                'btn-success': battingTeam.name == team.name,
-                'btn-outline-secondary': selectedBattingNow != team.name,
-              }"
-              @click="selectedBattingNow = team.name"
-              :disabled="battingTeam != ''"
-            >
+          <div class="col-md-3 col-lg-2 d-grid" v-if="battingTeam == '' || battingTeam.name == team.name">
+            <button type="button" class="btn" :class="{
+              'btn-info':
+                selectedBattingNow == team.name && battingTeam == '',
+              'btn-success': battingTeam.name == team.name,
+              'btn-outline-secondary': selectedBattingNow != team.name,
+            }" @click="selectedBattingNow = team.name" :disabled="battingTeam != ''">
               {{ team.name }}
-              <fa-icon
-                v-if="battingTeam.name == team.name"
-                icon="earth-africa"
-              />
+              <fa-icon v-if="battingTeam.name == team.name" icon="earth-africa" />
             </button>
           </div>
         </template>
         <div class="col-md-3 col-lg-2 d-grid">
-          <button
-            type="button"
-            class="btn btn-success"
-            @click="setBattingTeam"
-            v-if="!battingTeam"
-            :disabled="selectedBattingNow == ''"
-          >
+          <button type="button" class="btn btn-success" @click="setBattingTeam" v-if="!battingTeam"
+            :disabled="selectedBattingNow == ''">
             <fa-icon icon="check" />
           </button>
-          <button
-            type="button"
-            class="btn btn-secondary"
-            @click="battingTeam = ''"
-            v-if="battingTeam && !matchOngoing"
-          >
+          <button type="button" class="btn btn-secondary" @click="battingTeam = ''" v-if="battingTeam && !matchOngoing">
             <fa-icon icon="pen-to-square" />
           </button>
-          <ConfirmationModal
-            :hasTrigger="true"
-            header="Confirm switch innings?"
-            @switch-innings="switchInnings"
-            v-if="battingTeam && !isTargetSet && matchOngoing"
-          />
+          <ConfirmationModal :hasTrigger="true" header="Confirm switch innings?" @switch-innings="switchInnings"
+            v-if="battingTeam && !isTargetSet && matchOngoing" />
           <div class="alert alert-info" v-if="isTargetSet">
             Target: {{ target }}
           </div>
-          <ConfirmationModal
-            :header="'Match won by ' + wonBy"
-            v-if="isMatchWon"
-          />
+          <ConfirmationModal @next-match="refreshForNewMatch" @hide-result="() => showMatchResult = false"
+            :header="'Match won by ' + wonBy" v-if="showMatchResult" />
         </div>
       </div>
     </div>
-    <div
-      class="row mb-2 gy-2 justify-content-around"
-      aria-details="Match functions"
-      v-if="battingTeam"
-    >
+    <div class="row mb-2 gy-2 justify-content-around" aria-details="Match functions" v-if="battingTeam">
       <h3 class="col-12">Functions:</h3>
-      <ScoreModal
-        :header="'Choose batters'"
-        :secondButtonClass="'primary'"
-        :modalCondition="battingTeam"
-        :tooltipIcons="['walking', 'plus']"
-        v-if="!isMatchWon"
-      >
+      <ScoreModal :header="'Choose batters'" :secondButtonClass="'primary'" :modalCondition="battingTeam"
+        :tooltipIcons="['walking', 'plus']" v-if="!isMatchWon">
         <template #selectOption>
-          <div
-            class="col-auto d-grid"
-            v-for="(player, index) in battingTeam.players"
-            :key="index"
-          >
-            <button
-              type="button"
-              class="btn"
-              :class="[
-                batters.some((batter) => batter.name == player) ||
+          <div class="col-auto d-grid" v-for="(player, index) in battingTeam.players" :key="index">
+            <button type="button" class="btn" :class="[
+              batters.some((batter) => batter.name == player) ||
                 selectedBatter == player
-                  ? 'btn-info'
-                  : 'btn-outline-secondary',
-              ]"
-              :disabled="batters.some((batter) => batter.name == player)"
-              @click="selectBatter(player)"
-            >
+                ? 'btn-info'
+                : 'btn-outline-secondary',
+            ]" :disabled="batters.some((batter) => batter.name == player)" @click="selectBatter(player)">
               {{ player }}
             </button>
           </div>
@@ -103,56 +56,26 @@
           </button>
         </template>
       </ScoreModal>
-      <ScoreModal
-        :header="'Choose bowler'"
-        :secondButtonClass="'primary'"
-        :modalCondition="bowlingTeam"
-        :tooltipIcons="['person-running', 'baseball-ball']"
-        v-if="!isMatchWon"
-      >
+      <ScoreModal :header="'Choose bowler'" :secondButtonClass="'primary'" :modalCondition="bowlingTeam"
+        :tooltipIcons="['person-running', 'baseball-ball']" v-if="!isMatchWon">
         <template #selectOption>
-          <div
-            class="col-auto d-grid"
-            v-for="(player, index) in bowlingTeam.players"
-            :key="index"
-          >
-            <button
-              type="button"
-              class="btn"
-              :class="[
-                selectedBowler == player ? 'btn-info' : 'btn-outline-secondary',
-              ]"
-              @click="selectBowler(player)"
-            >
+          <div class="col-auto d-grid" v-for="(player, index) in bowlingTeam.players" :key="index">
+            <button type="button" class="btn" :class="[
+              selectedBowler == player ? 'btn-info' : 'btn-outline-secondary',
+            ]" @click="selectBowler(player)">
               {{ player }}
             </button>
           </div>
         </template>
-        <template #setOptions
-          ><button type="button" class="btn btn-primary" @click="setBowlers">
+        <template #setOptions><button type="button" class="btn btn-primary" @click="setBowlers">
             <fa-icon icon="check" /> Select
-          </button></template
-        >
+          </button></template>
       </ScoreModal>
-      <ScoreModal
-        :header="'Set score'"
-        :secondButtonClass="'warning'"
-        :modalCondition="canSetScore"
-        :tooltipIcons="['pen', 'clipboard-list']"
-        v-if="!isMatchWon"
-      >
-        <template #selectOption
-          ><div
-            class="col-auto d-grid"
-            v-for="(item, index) in availableScores"
-            :key="index"
-          >
-            <button
-              type="button"
-              class="btn btn-dark"
-              @click="addScore(item)"
-              :disabled="checkSelectableScores(item)"
-            >
+      <ScoreModal :header="'Set score'" :secondButtonClass="'warning'" :modalCondition="canSetScore"
+        :tooltipIcons="['pen', 'clipboard-list']" v-if="!isMatchWon">
+        <template #selectOption>
+          <div class="col-auto d-grid" v-for="(item, index) in availableScores" :key="index">
+            <button type="button" class="btn btn-dark" @click="addScore(item)" :disabled="checkSelectableScores(item)">
               {{ item.show }}
             </button>
           </div>
@@ -161,76 +84,46 @@
           <button type="button" class="btn btn-danger" @click="undoScore">
             <fa-icon icon="rotate-left" /> Undo
           </button>
-          <button
-            type="button"
-            class="btn btn-primary"
-            @click="setScore"
-            :disabled="batsmanInPitch.length != 2"
-          >
+          <button type="button" class="btn btn-primary" @click="setScore" :disabled="batsmanInPitch.length != 2">
             <fa-icon icon="plus" /> Add
           </button>
         </template>
       </ScoreModal>
       <div aria-details="Undo previous" class="col-auto">
         <button type="button" class="btn btn-danger" @click="undoPrevScore">
-          <button-tooltip
-            :header="'Undo last score'"
-            :icons="['rotate-left', 'clipboard-list']"
-          />
+          <button-tooltip :header="'Undo last score'" :icons="['rotate-left', 'clipboard-list']" />
         </button>
       </div>
       <div aria-details="Switch batter" class="col-auto" v-if="!isMatchWon">
-        <button
-          type="button"
-          class="btn btn-primary"
-          @click="switchBatter"
-          :disabled="batters.length < 1 || batsmanInPitch < 2"
-        >
-          <button-tooltip
-            :header="'Switch batsman'"
-            :icons="['toggle-on', 'walking']"
-          />
+        <button type="button" class="btn btn-primary" @click="switchBatter"
+          :disabled="batters.length < 1 || batsmanInPitch < 2">
+          <button-tooltip :header="'Switch batsman'" :icons="['toggle-on', 'walking']" />
+        </button>
+      </div>
+      <div aria-details="Next match button" class="col-auto">
+        <button type="button" class="btn btn-success" v-if="isMatchWon" @click="showMatchResultModal">
+          <button-tooltip :header="'Match result'" :icons="['toggle-on', 'forward-step']" />
         </button>
       </div>
       <div aria-details="Export scorecard" class="col-auto">
         <button type="button" class="btn btn-info" @click="exportToJson">
-          <button-tooltip
-            :header="'Download scoresheet'"
-            :icons="['upload', 'clipboard-list']"
-          />
+          <button-tooltip :header="'Download scoresheet'" :icons="['upload', 'clipboard-list']" />
         </button>
       </div>
     </div>
-    <div
-      class="mb-2"
-      aria-details="Scorecard"
-      v-if="matchOngoing && showScorecard"
-    >
+    <div class="mb-2" aria-details="Scorecard" v-if="matchOngoing && showScorecard">
       <h3 class="my-2">Scorecard:</h3>
       <ul class="nav nav-tabs" role="tablist">
-        <li
-          class="nav-item col-6 col-md-auto"
-          v-for="(team, teamN) in playingTeams"
-          :key="teamN"
-        >
-          <button
-            type="button"
-            role="tab"
-            class="nav-link w-100"
-            data-bs-toggle="tab"
-            :data-bs-target="'#' + $_.kebabCase(team.name) + '_scorecard'"
-          >
+        <li class="nav-item col-6 col-md-auto" v-for="(team, teamN) in playingTeams" :key="teamN">
+          <button type="button" role="tab" class="nav-link w-100" data-bs-toggle="tab"
+            :data-bs-target="'#' + $_.kebabCase(team.name) + '_scorecard'">
             {{ team.name }}
           </button>
         </li>
       </ul>
       <div class="tab-content">
-        <div
-          v-for="(team, teamN) in playingTeams"
-          :key="teamN"
-          class="tab-pane fade py-3"
-          :id="$_.kebabCase(team.name) + '_scorecard'"
-        >
+        <div v-for="(team, teamN) in playingTeams" :key="teamN" class="tab-pane fade py-3"
+          :id="$_.kebabCase(team.name) + '_scorecard'">
           <div class="row fw-bold">
             <div class="col-1">#</div>
             <div class="col-4">Batsman</div>
@@ -238,18 +131,13 @@
             <div class="col-2">Balls</div>
             <div class="col-3">S/R</div>
           </div>
-          <div
-            class="row my-1 rounded"
-            v-for="(batter, index) in batters.filter(
-              (b) => b.team == team.name
-            )"
-            :class="{
-              'bg-info bg-gradient': batsmanInPitch.some(
-                (batsman) => batsman.name == batter.name
-              ),
-            }"
-            :key="index"
-          >
+          <div class="row my-1 rounded" v-for="(batter, index) in batters.filter(
+            (b) => b.team == team.name
+          )" :class="{
+            'bg-info bg-gradient': batsmanInPitch.some(
+              (batsman) => batsman.name == batter.name
+            ),
+          }" :key="index">
             <div class="col-1">
               {{ index + 1 }}
             </div>
@@ -266,9 +154,7 @@
               {{ ((batter.run / batter.balls) * 100).toFixed(2) }}
             </div>
           </div>
-          <div
-            class="row my-3 fw-bold border border-dark border-end-0 border-start-0"
-          >
+          <div class="row my-3 fw-bold border border-dark border-end-0 border-start-0">
             <div class="col-5">
               Extras:
               {{ extraRun(team.name) }}
@@ -286,17 +172,10 @@
             <div class="col-3">
               {{ runRate(team.name).toFixed(2) }}
             </div>
-            <h6
-              v-if="scoreUpdates.length > 0"
-              class="col-12 d-flex align-items-center my-2"
-              style="gap: 0.5rem"
-            >
+            <h6 v-if="scoreUpdates.length > 0" class="col-12 d-flex align-items-center my-2" style="gap: 0.5rem">
               <span class="flex-shrink-0">Ball by ball:</span>
               <span class="overflow-auto d-flex" style="gap: 0.5rem">
-                <span
-                  v-for="lastBall in reversedScoreUpdates"
-                  class="badge bg-dark flex-shrink-0"
-                  >{{ lastBall }}
+                <span v-for="lastBall in reversedScoreUpdates" class="badge bg-dark flex-shrink-0">{{ lastBall }}
                 </span>
               </span>
             </h6>
@@ -309,16 +188,11 @@
             <div class="col-2 d-md-none">R/Wkt</div>
             <div class="col-3">Econ</div>
           </div>
-          <div
-            class="row"
-            v-for="(bowler, index) in bowlers.filter(
-              (b) => b.team != team.name
-            )"
-            :class="{
-              'bg-warning bg-gradient': bowler.name == selectedBowler,
-            }"
-            :key="index"
-          >
+          <div class="row" v-for="(bowler, index) in bowlers.filter(
+            (b) => b.team != team.name
+          )" :class="{
+            'bg-warning bg-gradient': bowler.name == selectedBowler,
+          }" :key="index">
             <div class="col-1">
               {{ index + 1 }}
             </div>
@@ -340,7 +214,6 @@
 </template>
 
 <script>
-import toastr from "toastr";
 import availableHits from "../plugins/availableHits.js";
 import { Tooltip } from "bootstrap";
 import { saveAs } from "file-saver";
@@ -377,6 +250,7 @@ export default {
       showScorecard: false,
       isTargetSet: false,
       isMatchWon: false,
+      showMatchResult: false,
     };
   },
   computed: {
@@ -431,6 +305,23 @@ export default {
       this.isTargetSet = true;
       this.updateState();
     },
+    refreshForNewMatch() {
+      this.playingTeams = JSON.parse(sessionStorage.getItem("playingTeams"));
+      this.selectedBattingNow = "";
+      this.battingTeam = "";
+      this.batters = [];
+      this.bowlers = [];
+      this.players = [];
+      this.selectedBatter = "";
+      this.selectedBowler = "";
+      this.selectedScores = [];
+      this.scores = [];
+      this.scoreUpdates = [];
+      this.showScorecard = false;
+      this.isTargetSet = false;
+      this.isMatchWon = false;
+      this.showMatchResult = false;
+    },
     setBattingTeam() {
       this.selectedBatter = "";
       this.selectedBowler = "";
@@ -442,7 +333,7 @@ export default {
       if (this.batsmanInPitch.length < 2) {
         this.selectedBatter = player;
       } else {
-        toastr.error("Two batsman already in pitch.");
+        this.toastr$.error("Two batsman already in pitch.");
       }
     },
     setBatters() {
@@ -731,6 +622,9 @@ export default {
         this.checkMatchEnd();
       }
     },
+    showMatchResultModal() {
+      this.showMatchResult = true;
+    },
     exportToJson() {
       let scorecard = {
         batters: this.batters,
@@ -751,7 +645,7 @@ export default {
       localStorage.getItem("hasOngoingTournament")
     );
     if (!this.matchOngoing && !this.tournamentOngoing) {
-      toastr.error("Please start a new match or a tournament!");
+      this.toastr$.error("Please start a new match or a tournament!");
       this.$router.push({
         name: "Home",
       });

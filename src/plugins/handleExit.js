@@ -20,8 +20,6 @@ export function setupBackButton(router) {
         if (value) {
           sessionStorage.clear();
           App.exitApp();
-        } else {
-          toastr.success("Let's start a match!");
         }
       });
     }

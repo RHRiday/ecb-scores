@@ -65,7 +65,6 @@
 </template>
 
 <script>
-import toastr from "toastr";
 import _ from "lodash";
 import Accordion from "../components/Accordion.vue";
 import OngoingConfirmationCard from "../components/OngoingConfirmationCard.vue";
@@ -113,7 +112,7 @@ export default {
     },
     setTeamSize() {
       if (!this.teamSize || isNaN(this.teamSize)) {
-        toastr.error("Please set how many players will play per team.");
+        this.toastr$.error("Please set how many players will play per team.");
       } else {
         this.isSetTeamSize = true;
         this.step++;
@@ -171,7 +170,7 @@ export default {
         return team.name.trim() !== "";
       });
       if (teamNames.length < 2) {
-        toastr.error("A game must have at least 2 teams.");
+        this.toastr$.error("A game must have at least 2 teams.");
         return false;
       }
       return true;
@@ -184,7 +183,7 @@ export default {
       const hasDuplicate =
         new Set(lowerCaseTeamNames).size !== this.playingTeams.length;
       if (hasDuplicate) {
-        toastr.error("Set unique team names!");
+        this.toastr$.error("Set unique team names!");
         return false;
       }
       return true;
@@ -203,7 +202,7 @@ export default {
 
       const isLeftEmpty = trimmedAllPlayers.length != allPlayers.length;
       if (isLeftEmpty) {
-        toastr.error("Must entry all team players.");
+        this.toastr$.error("Must entry all team players.");
         return false;
       }
       return true;
@@ -217,7 +216,7 @@ export default {
       const hasDuplicate =
         new Set(trimmedAllPlayers).size !== trimmedAllPlayers.length;
       if (hasDuplicate) {
-        toastr.error("Set unique player names!");
+        this.toastr$.error("Set unique player names!");
         return false;
       }
       return true;

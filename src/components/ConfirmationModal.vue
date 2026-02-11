@@ -1,10 +1,5 @@
 <template>
-  <button
-    type="button"
-    class="btn btn-info"
-    v-if="hasTrigger"
-    @click="openModal"
-  >
+  <button type="button" class="btn btn-info" v-if="hasTrigger" @click="openModal">
     <fa-icon icon="toggle-on" />
   </button>
   <div class="modal fade" ref="confirmModal">
@@ -20,49 +15,27 @@
               <label :for="'playing-team-' + index + 1">
                 Team #0{{ index + 1 }}:
               </label>
-              <select
-                class="form-select mt-2"
-                :id="'playing-team-' + index + 1"
-                v-model="playingTeams[index]"
-              >
+              <select class="form-select mt-2" :id="'playing-team-' + index + 1" v-model="playingTeams[index]">
                 <option v-for="team in allTeams" :value="team">
                   {{ team.name }}
                 </option>
               </select>
             </div>
             <div class="col-md-3 col-lg-2 d-grid my-2">
-              <button
-                type="button"
-                class="btn btn-outline-success"
-                @click="setPlayingTeams"
-              >
+              <button type="button" class="btn btn-outline-success" @click="setPlayingTeams">
                 Start match
               </button>
             </div>
           </div>
         </div>
         <div class="modal-footer">
-          <button
-            type="button"
-            class="btn btn-outline-secondary"
-            @click="closeModal"
-          >
+          <button type="button" class="btn btn-outline-secondary" @click="closeModal">
             Close
           </button>
-          <button
-            v-if="!hasTrigger && !tounamentNextGame"
-            type="button"
-            class="btn btn-success"
-            @click="goNext"
-          >
+          <button v-if="!hasTrigger && !tounamentNextGame" type="button" class="btn btn-success" @click="goNext">
             Next match
           </button>
-          <button
-            v-if="hasTrigger"
-            type="button"
-            class="btn btn-success"
-            @click="switchInnings"
-          >
+          <button v-if="hasTrigger" type="button" class="btn btn-success" @click="switchInnings">
             Switch
           </button>
         </div>
@@ -75,7 +48,7 @@ import _ from "lodash";
 import { Modal } from "bootstrap";
 
 export default {
-  emits: ["switch-innings"],
+  emits: ["switch-innings", "next-match", "hide-result"],
   props: {
     hasTrigger: false,
     header: "",
@@ -107,6 +80,7 @@ export default {
     },
     closeModal() {
       document.activeElement?.blur();
+      this.$emit("hide-result");
       this.modal.hide();
     },
     goNext() {
@@ -121,9 +95,6 @@ export default {
         this.tounamentNextGame = true;
         this.playingTeams = JSON.parse(localStorage.getItem("playingTeams"));
         this.allTeams = JSON.parse(localStorage.getItem("tournamentTeams"));
-        // this.$router.push({
-        //   name: "ScoreBoard",
-        // });
       }
     },
     setPlayingTeams() {
@@ -135,14 +106,16 @@ export default {
       const isDuplicate =
         new Set(playingTeamNames).size !== playing2Teams.length;
       if (playing2Teams.length !== 2) {
-        toastr.error("You must select 2 teams to start game.");
+        this.toastr$.error("You must select 2 teams to start game.");
       } else if (isDuplicate) {
-        toastr.error("Two teams are same!");
+        this.toastr$.error("Two teams are same!");
       } else {
         this.saveState();
-        this.$router.push({
-          name: "ScoreBoard",
-        });
+        // this.$router.push({
+        //   name: "ScoreBoard",
+        // });
+        this.$emit("next-match");
+        this.tounamentNextGame = false;
         this.closeModal();
       }
     },

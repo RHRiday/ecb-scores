@@ -9,7 +9,7 @@
       <h3>Enter team names:</h3>
       <div class="row">
         <div v-for="(team, teamIndex) in allTeams" class="col-md-6" :class="'col-' +
-          (teamIndex + 1 != allTeams.length || isSetTeamNames ? '12' : '10')
+          (teamIndex + 1 != allTeams.length || isSetTeamNames ? '12' : '9')
           ">
           <div class="form-floating mb-3">
             <input type="text" class="form-control" :id="'team-' + teamIndex + 1" placeholder="Rakib's team"
@@ -17,7 +17,7 @@
             <label :for="'team-' + teamIndex + 1">Team #{{ teamIndex + 1 }}</label>
           </div>
         </div>
-        <div class="col-2" v-if="!isSetTeamNames">
+        <div class="col-3 text-end" v-if="!isSetTeamNames">
           <button class="btn btn-lg btn-outline-info">
             <fa-icon icon="plus" title="Add more" @click="addIntoTeams" />
           </button>
@@ -98,7 +98,6 @@
 </template>
 
 <script>
-import toastr from "toastr";
 import _ from "lodash";
 import Accordion from "../components/Accordion.vue";
 import OngoingConfirmationCard from "../components/OngoingConfirmationCard.vue";
@@ -153,7 +152,7 @@ export default {
     },
     setTeamSize() {
       if (!this.teamSize || isNaN(this.teamSize)) {
-        toastr.error("Please set how many players will play per team.");
+        this.toastr$.error("Please set how many players will play per team.");
       } else {
         this.isSetTeamSize = true;
         this.step++;
@@ -230,9 +229,9 @@ export default {
       const isDuplicate =
         new Set(playingTeamNames).size !== playing2Teams.length;
       if (playing2Teams.length !== 2) {
-        toastr.error("You must select 2 teams to start game.");
+        this.toastr$.error("You must select 2 teams to start game.");
       } else if (isDuplicate) {
-        toastr.error("Two teams are same!");
+        this.toastr$.error("Two teams are same!");
       } else {
         this.saveState();
         this.$router.push({
@@ -247,7 +246,7 @@ export default {
         }
       });
       if (this.allTeams.length < 2) {
-        toastr.error("A game must have at least 2 teams.");
+        this.toastr$.error("A game must have at least 2 teams.");
         return false;
       }
       return true;
@@ -260,7 +259,7 @@ export default {
       const hasDuplicate =
         new Set(lowerCaseTeamNames).size !== this.allTeams.length;
       if (hasDuplicate) {
-        toastr.error("Set unique team names!");
+        this.toastr$.error("Set unique team names!");
         return false;
       }
       return true;
@@ -279,7 +278,7 @@ export default {
 
       const isLeftEmpty = trimmedAllPlayers.length != allPlayers.length;
       if (isLeftEmpty) {
-        toastr.error("Must entry all team players.");
+        this.toastr$.error("Must entry all team players.");
         return false;
       }
       return true;
@@ -293,7 +292,7 @@ export default {
       const hasDuplicate =
         new Set(trimmedAllPlayers).size !== trimmedAllPlayers.length;
       if (hasDuplicate) {
-        toastr.error("Set unique player names!");
+        this.toastr$.error("Set unique player names!");
         return false;
       }
       return true;
